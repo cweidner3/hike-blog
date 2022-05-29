@@ -3,7 +3,10 @@ import {useState, useEffect, useRef} from 'react';
 import logo from './logo.svg';
 import './App.css';
 
-import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+import mapboxgl, {
+  NavigationControl,
+  ScaleControl,
+} from 'mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 
 const {
   MAPBOXGL_ACCESS_TOKEN = 'pk.eyJ1IjoiY3dlaWRuZXIzIiwiYSI6ImNsM29wbDU0dTBxdjkzY3V2ajk2Y2I3MXcifQ.KYe1u_UcNKFneq-d0bCU0g',
@@ -38,6 +41,9 @@ function MapComponent(props = {}) {
         center: [-100, 40],
         zoom: 3,
       });
+
+      map.addControl(new ScaleControl({unit: 'imperial'}), 'bottom-right');
+      map.addControl(new NavigationControl(), 'bottom-right');
 
       mapObjRef.current = map;
     }
