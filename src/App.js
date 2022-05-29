@@ -25,17 +25,22 @@ function mapStyleUrl(name) {
 }
 
 function MapComponent(props = {}) {
-  const mapRef = useRef();
+  const mapRef = useRef(null);
+  const mapObjRef = useRef(null);
 
   const mapStyleName = useState('outdoors-v11');
 
   useEffect(() => {
-    const map = new mapboxgl.Map( {
-      container: mapRef.current,
-      style: mapStyleUrl(mapStyleName),
-      center: [-74.5, 40],
-      zoom: 9,
-    });
+    if (mapObjRef.current === null) {
+      const map = new mapboxgl.Map( {
+        container: mapRef.current,
+        style: mapStyleUrl(mapStyleName),
+        center: [-74.5, 40],
+        zoom: 9,
+      });
+
+      mapObjRef.current = map;
+    }
   }, []);
 
   const mapStyle = {
