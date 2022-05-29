@@ -3,7 +3,7 @@ import {useState, useEffect, useRef} from 'react';
 import logo from './logo.svg';
 import './App.css';
 
-import mapboxgl from 'mapbox-gl';
+import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 
 const {
   MAPBOXGL_ACCESS_TOKEN = 'pk.eyJ1IjoiY3dlaWRuZXIzIiwiYSI6ImNsM29wbDU0dTBxdjkzY3V2ajk2Y2I3MXcifQ.KYe1u_UcNKFneq-d0bCU0g',
@@ -43,23 +43,40 @@ function MapComponent(props = {}) {
     }
   }, []);
 
-  const mapStyle = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-  };
+  const mapStyle = {};
 
   return (
-    <div ref={mapRef} className="map-container" style={mapStyle} />
+    <div ref={mapRef} className="Map" style={mapStyle} />
   );
 }
 
-
 function App() {
+  const contentDivStyle = {
+    maxWidth: '960px',
+    margin: 'auto',
+  };
+
   return (
-    <MapComponent />
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.js</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+      <div style={contentDivStyle}>
+        test
+        <MapComponent />
+      </div>
+    </div>
   );
 }
 
