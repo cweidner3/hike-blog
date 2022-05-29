@@ -35,8 +35,8 @@ function MapComponent(props = {}) {
       const map = new mapboxgl.Map( {
         container: mapRef.current,
         style: mapStyleUrl(mapStyleName),
-        center: [-74.5, 40],
-        zoom: 9,
+        center: [-100, 40],
+        zoom: 3,
       });
 
       mapObjRef.current = map;
