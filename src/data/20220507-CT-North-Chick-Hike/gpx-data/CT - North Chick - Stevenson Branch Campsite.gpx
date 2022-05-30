@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml-stylesheet type="text/xsl" href="details.xsl"?>
+<gpx
+ version="1.1"
+ creator="GaiaGPS for Android"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xmlns="http://www.topografix.com/GPX/1/1"
+ xmlns:topografix="http://www.topografix.com/GPX/Private/TopoGrafix/0/1"
+ xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd http://www.topografix.com/GPX/Private/TopoGrafix/0/1 http://www.topografix.com/GPX/Private/TopoGrafix/0/1/topografix.xsd">
+<wpt lat="35.267636" lon="-85.264465">
+<ele>338.7</ele>
+<time>2020-03-31T03:01:36Z</time>
+<name><![CDATA[Stevenson Branch Campsite]]></name>
+<desc></desc>
+</wpt>
+</gpx>
