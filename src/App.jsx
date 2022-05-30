@@ -19,6 +19,12 @@ const gHeaderImages = [
 
 mapboxgl.accessToken = MAPBOXGL_ACCESS_TOKEN
 
+function importAll(r) {
+  return r.keys().map(r);
+}
+
+const gLoadedImages = importAll(require.context('./data/20220507-CT-North-Chick-Hike/pictures/', false, /\.(png|jpe?g|svg)$/));
+
 function mapStyleUrl(name) {
   if (name === 'outdoors') {
     return 'mapbox://styles/mapbox/outdoors-v11';
