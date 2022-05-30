@@ -1,6 +1,5 @@
 import {useState, useEffect, useRef} from 'react';
 
-import logo from './logo.svg';
 import './App.css';
 
 import mapboxgl, {
@@ -11,6 +10,12 @@ import mapboxgl, {
 const {
   MAPBOXGL_ACCESS_TOKEN = 'pk.eyJ1IjoiY3dlaWRuZXIzIiwiYSI6ImNsM29wbDU0dTBxdjkzY3V2ajk2Y2I3MXcifQ.KYe1u_UcNKFneq-d0bCU0g',
 } = process.env;
+
+const gPicLocation = './data/20220507-CT-North-Chick-Hike/pictures';
+const gHeaderImages = [
+  { name: '2022-05-07 11.11.43.jpg', alt: 'Weston Trail Head' },
+  { name: '2022-05-07 11.11.57.jpg', alt: 'Cora Trail Head' },
+];
 
 mapboxgl.accessToken = MAPBOXGL_ACCESS_TOKEN
 
@@ -25,6 +30,10 @@ function mapStyleUrl(name) {
     return 'mapbox://styles/mapbox/streets-v11';
   }
   return 'mapbox://styles/mapbox/outdoors-v11';
+}
+
+async function loadImage(dir, image) {
+  return require(`${dir}/${image}`);
 }
 
 function MapComponent(props = {}) {
@@ -56,31 +65,67 @@ function MapComponent(props = {}) {
   );
 }
 
-function App() {
-  const contentDivStyle = {
-    maxWidth: '960px',
-    margin: 'auto',
+function Header(props = {}) {
+  const title = "Cora and Weston's Hike on the Cumberland Trail";
+  const subtitle = `May 7-9, 2022: North Chickamauga Creek Segement`;
+
+  return (<>
+    <div className='hero has-text-centered'>
+      <span className='title'>{title}</span>
+      <span className='subtitle'>{subtitle}</span>
+    </div>
+  </>)
+}
+
+function TrailHeadPics(props = {}) {
+  const widthFloat = 1.0 / gHeaderImages.length;
+  const widthStr = `${Math.round(100 * widthFloat) - 1}%`;
+  const imgStyle = {
+    float: 'auto',
+    width: widthStr,
+    maxWidth: '400px',
+    padding: '1%',
   };
 
+  const [headImages, setHeadImages] = useState(gHeaderImages.map((x, i) => [i, x]));
+
+  useEffect(() => {
+    gHeaderImages.forEach((x, i) => {
+      loadImage(gPicLocation, x.name).then((imageData) => {
+        const img = headImages[i];
+        img.src = imageData;
+        setHeadImages({
+          ...headImages,
+          [i]: img,
+        });
+      }).catch((err) => {
+        console.error(err);
+      });
+    });
+  }, []);
+
+  const imageTags = Object.values(headImages).map((x) => {
+    return (!!x.src) ?
+      (<img src={x.src} key={`${x.name}`} style={imgStyle} alt={x.alt} />)
+      : `${x.alt}`;
+  });
+
+  return (<>
+    <div className='section has-text-centered'>
+      {imageTags}
+    </div>
+  </>)
+}
+
+function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-      <div style={contentDivStyle}>
-        test
-        <MapComponent />
+    <div>
+      <Header />
+      <TrailHeadPics />
+      <div className='container'>
+        <div className='section'>
+          <MapComponent />
+        </div>
       </div>
     </div>
   );
