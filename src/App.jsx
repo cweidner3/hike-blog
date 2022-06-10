@@ -1,6 +1,7 @@
 import {useState, useEffect, useRef} from 'react';
 
 import './App.css';
+import { parseXml } from './XmlParsing';
 
 import mapboxgl, {
   NavigationControl,
@@ -24,6 +25,7 @@ function importAll(r) {
 }
 
 const gLoadedImages = importAll(require.context('./data/20220507-CT-North-Chick-Hike/pictures/', false, /\.(png|jpe?g|svg)$/));
+const gGpxData = importAll(require.context('./data/20220507-CT-North-Chick-Hike/gpx-data', false, /\.gpx$/));
 
 function mapStyleUrl(name) {
   if (name === 'outdoors') {
@@ -42,11 +44,47 @@ async function loadImage(dir, image) {
   return require(`${dir}/${image}`);
 }
 
+function deconstructFilename(file) {
+  const match =  file.match(/(.+)\.([a-zA-Z0-9]+)\.([a-zA-Z]+)$/);
+  const filePathParts = match[1].split('/');
+  return { file: file, name: filePathParts[filePathParts.length - 1], hash: match[2], ext: match[3] };
+}
+
+
 function MapComponent(props = {}) {
+  const {
+    mapStyleName = 'outdoors-v11',
+  } = props;
+
   const mapRef = useRef(null);
   const mapObjRef = useRef(null);
 
-  const mapStyleName = useState('outdoors-v11');
+  const [tracks, setTracks] = useState([]);
+  const [waypoints, setWaypoints] = useState([]);
+
+  const loadGpxData = async () => {
+    const currentWp = {};
+    const currentTracks = {};
+
+    console.debug('App: Load GPX Data Started');
+
+    const dataProm = (
+      gGpxData.map(async (file, i) => {
+        const fileObj = deconstructFilename(file);
+        fileObj.data = await parseXml(fileObj.file);
+        if (!!fileObj.data.waypoint) {
+          currentWp[i] = fileObj;
+        }
+        if (!!fileObj.data.track) {
+          currentTracks[i] = fileObj;
+        }
+      })
+    )
+    await Promise.all(dataProm).catch((err) => console.error('App: Failed to parse data:', err.message));
+    console.debug('App: Tracks', currentTracks);
+    setTracks(Object.values(currentTracks));
+    setWaypoints(Object.values(currentWp));
+  };
 
   useEffect(() => {
     if (mapObjRef.current === null) {
@@ -62,6 +100,8 @@ function MapComponent(props = {}) {
 
       mapObjRef.current = map;
     }
+
+    loadGpxData();
   }, []);
 
   const mapStyle = {};
