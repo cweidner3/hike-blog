@@ -110,9 +110,16 @@ function TrailHeadPics(props = {}) {
     });
   }, []);
 
-  const imageTags = Object.values(headImages).map((x) => {
+  const imageTags = Object.values(headImages).map((x, i) => {
     return (!!x.src) ?
-      (<img src={x.src} key={`${x.name}`} style={imgStyle} alt={x.alt} />)
+      (
+        <img
+          src={x.src}
+          key={`${x.name ?? `trail-head-img-${i}`}`}
+          style={imgStyle}
+          alt={x.alt}
+        />
+      )
       : `${x.alt}`;
   });
 
