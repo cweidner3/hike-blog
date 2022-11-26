@@ -20,12 +20,14 @@ const gHeaderImages = [
 
 mapboxgl.accessToken = MAPBOXGL_ACCESS_TOKEN
 
-function importAll(r) {
-  return r.keys().map(r);
-}
+// function importAll(r) {
+//   return r.keys().map(r);
+// }
 
-const gLoadedImages = importAll(require.context('./data/20220507-CT-North-Chick-Hike/pictures/', false, /\.(png|jpe?g|svg)$/));
-const gGpxData = importAll(require.context('./data/20220507-CT-North-Chick-Hike/gpx-data', false, /\.gpx$/));
+const gLoadedImages = [];
+// const gLoadedImages = importAll(require.context('./data/20220507-CT-North-Chick-Hike/pictures/', false, /\.(png|jpe?g|svg)$/));
+const gGpxData = [];
+// const gGpxData = importAll(require.context('./data/20220507-CT-North-Chick-Hike/gpx-data', false, /\.gpx$/));
 
 function mapStyleUrl(name) {
   if (name === 'outdoors') {
@@ -65,91 +67,105 @@ function MapComponent(props = {}) {
 
   const mapRef = useRef(null);
   const mapObjRef = useRef(null);
-
-  const [tracks, setTracks] = useState([]);
-  const [waypoints, setWaypoints] = useState([]);
-
-  const [tracksGeoJSON, setTracksGeoJSON] = useState([]);
-
-  const loadGpxData = async () => {
-    const currentWp = {};
-    const currentTracks = {};
-
-    console.debug('App: Load GPX Data Started');
-
-    const dataProm = (
-      gGpxData.map(async (file, i) => {
-        const fileObj = deconstructFilename(file);
-        fileObj.data = await parseXml(fileObj.file);
-        if (!!fileObj.data.waypoint) {
-          currentWp[i] = fileObj;
-        }
-        if (!!fileObj.data.track) {
-          currentTracks[i] = fileObj;
-        }
-      })
-    )
-    await Promise.all(dataProm).catch((err) => console.error('App: Failed to parse data:', err.message));
-    console.debug('App: Tracks', currentTracks);
-    setTracks(Object.values(currentTracks));
-    setWaypoints(Object.values(currentWp));
-  };
-
-  useEffect(() => {
-    if (mapObjRef.current == null) {
-      const map = new mapboxgl.Map( {
-        container: mapRef.current,
-        style: mapStyleUrl(mapStyleName),
-        center: [-100, 40],
-        zoom: 3,
-      });
-
-      map.addControl(new ScaleControl({unit: 'imperial'}), 'bottom-right');
-      map.addControl(new NavigationControl(), 'bottom-right');
-
-      map.addSource('tracks', {
-        type: 'geojson',
-        data: toGeoJSONTrack([]),
-      });
-
-      map.addLayer({
-        id: 'route',
-        type: 'line',
-        source: 'tracks',
-        layout: {
-          'line-join': 'round',
-          'line-cap': 'round',
-        },
-        paint: {
-          'line-color': '#00F',
-          'line-opacity': 0.8,
-          'line-width': 4,
-        },
-      });
-
-      map.on('load', () => {
-        mapObjRef.current = map;
-
-        loadGpxData();
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (mapObjRef.current == null) {
-      return;
-    }
-    mapObjRef.current?.getSource?.('tracks')?.setData?.(
-      transformTracks(tracks)
-    );
-  }, [tracks]);
-
   const mapStyle = {};
 
   return (
     <div ref={mapRef} className="Map" style={mapStyle} />
   );
 }
+
+// function MapComponent(props = {}) {
+//   const {
+//     mapStyleName = 'outdoors-v11',
+//   } = props;
+
+//   const mapRef = useRef(null);
+//   const mapObjRef = useRef(null);
+
+//   const [tracks, setTracks] = useState([]);
+//   const [waypoints, setWaypoints] = useState([]);
+
+//   const [tracksGeoJSON, setTracksGeoJSON] = useState([]);
+
+//   const loadGpxData = async () => {
+//     const currentWp = {};
+//     const currentTracks = {};
+
+//     console.debug('App: Load GPX Data Started');
+
+//     const dataProm = (
+//       gGpxData.map(async (file, i) => {
+//         const fileObj = deconstructFilename(file);
+//         fileObj.data = await parseXml(fileObj.file);
+//         if (!!fileObj.data.waypoint) {
+//           currentWp[i] = fileObj;
+//         }
+//         if (!!fileObj.data.track) {
+//           currentTracks[i] = fileObj;
+//         }
+//       })
+//     )
+//     await Promise.all(dataProm).catch((err) => console.error('App: Failed to parse data:', err.message));
+//     console.debug('App: Tracks', currentTracks);
+//     setTracks(Object.values(currentTracks));
+//     setWaypoints(Object.values(currentWp));
+//   };
+
+//   useEffect(() => {
+//     if (mapObjRef.current == null) {
+//       const map = new mapboxgl.Map( {
+//         container: mapRef.current,
+//         style: mapStyleUrl(mapStyleName),
+//         center: [-100, 40],
+//         zoom: 3,
+//       });
+
+//       map.addControl(new ScaleControl({unit: 'imperial'}), 'bottom-right');
+//       map.addControl(new NavigationControl(), 'bottom-right');
+
+//       map.addSource('tracks', {
+//         type: 'geojson',
+//         data: toGeoJSONTrack([]),
+//       });
+
+//       map.addLayer({
+//         id: 'route',
+//         type: 'line',
+//         source: 'tracks',
+//         layout: {
+//           'line-join': 'round',
+//           'line-cap': 'round',
+//         },
+//         paint: {
+//           'line-color': '#00F',
+//           'line-opacity': 0.8,
+//           'line-width': 4,
+//         },
+//       });
+
+//       map.on('load', () => {
+//         mapObjRef.current = map;
+
+//         loadGpxData();
+//       });
+//     }
+//   }, []);
+
+//   // useEffect(() => {
+//   //   if (mapObjRef.current == null) {
+//   //     return;
+//   //   }
+//   //   mapObjRef.current?.getSource?.('tracks')?.setData?.(
+//   //     transformTracks(tracks)
+//   //   );
+//   // }, [tracks]);
+
+//   const mapStyle = {};
+
+//   return (
+//     <div ref={mapRef} className="Map" style={mapStyle} />
+//   );
+// }
 
 function Header(props = {}) {
   const title = "Cora and Weston's Hike on the Cumberland Trail";
@@ -175,20 +191,20 @@ function TrailHeadPics(props = {}) {
 
   const [headImages, setHeadImages] = useState(gHeaderImages.map((x, i) => [i, x]));
 
-  useEffect(() => {
-    gHeaderImages.forEach((x, i) => {
-      loadImage(gPicLocation, x.name).then((imageData) => {
-        const img = headImages[i];
-        img.src = imageData;
-        setHeadImages({
-          ...headImages,
-          [i]: img,
-        });
-      }).catch((err) => {
-        console.error(err);
-      });
-    });
-  }, []);
+  // useEffect(() => {
+  //   gHeaderImages.forEach((x, i) => {
+  //     loadImage(gPicLocation, x.name).then((imageData) => {
+  //       const img = headImages[i];
+  //       img.src = imageData;
+  //       setHeadImages({
+  //         ...headImages,
+  //         [i]: img,
+  //       });
+  //     }).catch((err) => {
+  //       console.error(err);
+  //     });
+  //   });
+  // }, []);
 
   const imageTags = Object.values(headImages).map((x, i) => {
     return (!!x.src) ?
