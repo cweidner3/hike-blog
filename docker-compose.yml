@@ -1,7 +1,7 @@
 services:
   web:
-    build: .
+    build: ./web
     ports:
     - 3000:3000/tcp
     volumes:
-    - ./src:/app/src:ro
+    - ./web/src:/app/src:ro
