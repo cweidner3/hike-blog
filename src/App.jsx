@@ -1,7 +1,7 @@
 import {useState, useEffect, useRef} from 'react';
 
 import './App.css';
-import { parseXml } from './XmlParsing';
+import { parseXml, toGeoJSONTrack } from './XmlParsing';
 
 import mapboxgl, {
   NavigationControl,
@@ -50,6 +50,13 @@ function deconstructFilename(file) {
   return { file: file, name: filePathParts[filePathParts.length - 1], hash: match[2], ext: match[3] };
 }
 
+function transformTracks(tracks) {
+  if (!tracks?.length) {
+    return [];
+  }
+  const coords = toGeoJSONTrack(tracks[0].data.track);
+  return coords;
+}
 
 function MapComponent(props = {}) {
   const {
@@ -61,6 +68,8 @@ function MapComponent(props = {}) {
 
   const [tracks, setTracks] = useState([]);
   const [waypoints, setWaypoints] = useState([]);
+
+  const [tracksGeoJSON, setTracksGeoJSON] = useState([]);
 
   const loadGpxData = async () => {
     const currentWp = {};
@@ -87,7 +96,7 @@ function MapComponent(props = {}) {
   };
 
   useEffect(() => {
-    if (mapObjRef.current === null) {
+    if (mapObjRef.current == null) {
       const map = new mapboxgl.Map( {
         container: mapRef.current,
         style: mapStyleUrl(mapStyleName),
@@ -98,11 +107,42 @@ function MapComponent(props = {}) {
       map.addControl(new ScaleControl({unit: 'imperial'}), 'bottom-right');
       map.addControl(new NavigationControl(), 'bottom-right');
 
-      mapObjRef.current = map;
-    }
+      map.addSource('tracks', {
+        type: 'geojson',
+        data: toGeoJSONTrack([]),
+      });
 
-    loadGpxData();
+      map.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'tracks',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round',
+        },
+        paint: {
+          'line-color': '#00F',
+          'line-opacity': 0.8,
+          'line-width': 4,
+        },
+      });
+
+      map.on('load', () => {
+        mapObjRef.current = map;
+
+        loadGpxData();
+      });
+    }
   }, []);
+
+  useEffect(() => {
+    if (mapObjRef.current == null) {
+      return;
+    }
+    mapObjRef.current?.getSource?.('tracks')?.setData?.(
+      transformTracks(tracks)
+    );
+  }, [tracks]);
 
   const mapStyle = {};
 
