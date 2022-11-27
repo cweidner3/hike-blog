@@ -34,7 +34,7 @@ services:
     ports:
       - 5432:5432/tcp
     volumes:
-      - db_data:/var/lib/postgres/data
+      - db_data:/var/lib/postgresql/data
 
   adminer:
     image: adminer:4.8.1
