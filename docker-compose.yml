@@ -12,15 +12,17 @@ services:
 
   web:
     build: ./web
-    ports:
-    - 3000:3000/tcp
     volumes:
     - ./web/src:/app/src:ro
 
   api:
     build: ./api
-    ports:
-      - 3030:5000/tcp
+    environment:
+      DB_DIALECT: postgres
+      DB_HOST: db
+      DB_NAME: db
+      DB_USER: postgres
+      DB_PASS: secret
     volumes:
     - ./api/src:/app/src:ro
 
@@ -29,6 +31,8 @@ services:
     environment:
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: db
+    ports:
+      - 5432:5432/tcp
     volumes:
       - db_data:/var/lib/postgres/data
 
