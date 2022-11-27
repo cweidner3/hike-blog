@@ -3,7 +3,7 @@ from typing import Any, Tuple
 
 import flask
 from flask_expects_json import expects_json
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from src.common import GLOBALS
@@ -36,8 +36,11 @@ def new_hike():
         hike = Hike(**data)
         session.add(hike)
         session.flush()
+        GLOBALS.logger.debug('Hike created: %s', hike)
         session.commit()
-    return hike.serialized
+        hike = hike.serialized
+        GLOBALS.logger.debug('Hike created (serialized): %s', hike)
+    return hike
 
 
 @bp_hikes.route('/<int:hike_id>', methods=['DELETE'])

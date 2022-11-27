@@ -9,3 +9,4 @@ webcolors
 rfc3339-validator
 isoduration
 rfc3986-validator
+requests
