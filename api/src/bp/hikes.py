@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from src.common import GLOBALS
 from src.db.core import engine
 from src.db.models import Hike
+from src.importers import gpx
 
 bp_hikes = flask.Blueprint('hikes', __name__, url_prefix='/hikes')
 
@@ -51,4 +52,19 @@ def delete_hike(hike_id: int):
             .where(Hike.id == hike_id)
         )
         session.commit()
+    return {'status': 'OK'}
+
+
+@bp_hikes.route('/<int:hike_id>/data', methods=['POST'])
+def import_data(hike_id: int):
+    with Session(engine) as session:
+        hike = session.execute(
+            select(Hike)
+            .where(Hike.id == hike_id)
+        ).scalar_one()
+        files = flask.request.files.keys()
+        GLOBALS.logger.debug('Files: %s', files)
+        for file in files:
+            data = gpx.import_file(flask.request.files[file].stream.read())
+            GLOBALS.logger.debug('Got import data: %s', data)
     return {'status': 'OK'}

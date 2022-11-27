@@ -9,6 +9,12 @@ from sqlalchemy import create_engine
 
 from src.db.core import get_db_uri
 
+TESTS_FOLDER = Path(__file__).parent.resolve()
+ROOT_FOLDER = Path(TESTS_FOLDER, '../..').resolve()
+DATA_FOLDER = Path(ROOT_FOLDER, 'data').resolve()
+
+assert all(map(lambda x: x.exists(), (TESTS_FOLDER, ROOT_FOLDER, DATA_FOLDER)))
+
 
 class _Cached:
     def __init__(self) -> None:
