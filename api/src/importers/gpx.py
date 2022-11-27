@@ -6,11 +6,13 @@ recorded tracks and waypoints.
 from datetime import datetime
 import functools
 import operator
-from typing import List, Optional, Tuple, Union
+from typing import Iterator, List, Optional, Tuple, Union
 import xml.etree.ElementTree as ET
 
 NAMESPACE = 'http://www.topografix.com/GPX/1/1'
 NS = 'gpx'
+
+CoordsType = Tuple[Optional[float], Optional[float], Optional[float]]
 
 
 class GpxElement:
@@ -60,28 +62,33 @@ class GpxElement:
 
     def _conv_datetime(self, value: Optional[str]) -> Optional[datetime]:
         if value:
+            value = value.replace('Z', '-00:00')
             return datetime.fromisoformat(value)
         return None
 
     def _find(self, node: ET.Element, tag: str) -> Optional[ET.Element]:
         tag = f'{{{NAMESPACE}}}{tag}'
+        for child in node:
+            if child.tag == tag:
+                return child
         return node.find(tag)
 
     def _find_text(self, node: ET.Element, tag: str) -> Optional[str]:
         tag = f'{{{NAMESPACE}}}{tag}'
+        for child in node:
+            if child.tag == tag:
+                return child.text
         return node.findtext(tag)
 
     @property
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         ''' Name of the element. '''
-        value = self._get_property('_name')
-        return value
+        return self._name
 
     @property
-    def description(self) -> str:
+    def description(self) -> Optional[str]:
         ''' Description of the element, if provided. '''
-        value = self._get_property('_description')
-        return value
+        return self._description
 
 
 class GpxTrackPoint(GpxElement):
@@ -110,25 +117,21 @@ class GpxTrackPoint(GpxElement):
         self._lat = self._conv_float(node.get('lat'))
         self._lon = self._conv_float(node.get('lon'))
         ele = self._find(node, 'ele')
-        if ele:
+        if ele is not None:
             self._ele = self._conv_float(ele.text)
         time = self._find(node, 'time')
-        if time:
+        if time is not None:
             self._time = self._conv_datetime(time.text)
 
     @property
-    def coords(self) -> Tuple[float, float, float]:
+    def coords(self) -> CoordsType:
         ''' Coordinates of the waypoint (lat, lon, ele). '''
-        val1 = self._get_property('_lat')
-        val2 = self._get_property('_lon')
-        val3 = self._get_property('_ele')
-        return (val1, val2, val3)
+        return (self._lat, self._lon, self._ele)
 
     @property
-    def time(self) -> datetime:
+    def time(self) -> Optional[datetime]:
         ''' Timestamp associated with the waypoint. '''
-        value = self._get_property('_time')
-        return value
+        return self._time
 
 
 class GpxTrackSegment(GpxElement):
@@ -136,7 +139,7 @@ class GpxTrackSegment(GpxElement):
 
     TAG = f'{{{NAMESPACE}}}trkseg'
     _PROPS = [
-        '_points',
+        'length',
     ]
 
     def __init__(self, node: Optional[ET.Element] = None) -> None:
@@ -145,6 +148,9 @@ class GpxTrackSegment(GpxElement):
         super().__init__(node=node, props=self._PROPS)
         if node:
             self._parse_node(node)
+
+    def __iter__(self) -> Iterator[GpxTrackPoint]:
+        return iter(self._points)
 
     def _parse_node(self, node: ET.Element):
         assert node.tag == self.TAG, f'Node provided, {node.tag}, is not {self.TAG}'
@@ -174,6 +180,9 @@ class GpxTrack(GpxElement):
         super().__init__(node=node, props=self._PROPS, append=True)
         if node:
             self._parse_node(node)
+
+    def __iter__(self) -> Iterator[GpxTrackSegment]:
+        return iter(self._segments)
 
     def _parse_node(self, node: ET.Element):
         assert node.tag == self.TAG, f'Node provided, {node.tag}, is not {self.TAG}'
@@ -219,11 +228,21 @@ class GpxWaypoint(GpxElement):
         self._lat = self._conv_float(node.get('lat'))
         self._lon = self._conv_float(node.get('lon'))
         ele = self._find(node, 'ele')
-        if ele:
+        if ele is not None:
             self._ele = self._conv_float(ele.text)
         time = self._find(node, 'time')
-        if time:
+        if time is not None:
             self._time = self._conv_datetime(time.text)
+
+    @property
+    def coords(self) -> CoordsType:
+        ''' Get corrdinates associated with the waypoint. '''
+        return (self._lat, self._lon, self._ele)
+
+    @property
+    def time(self) -> Optional[datetime]:
+        ''' Get timestamp associated with the waypoint. '''
+        return self._time
 
 
 GpxType = Union[

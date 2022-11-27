@@ -3,9 +3,9 @@ Database setup and engine provider.
 '''
 
 import os
-import flask
 from typing import Dict, Optional
 
+import flask
 import sqlalchemy
 import sqlalchemy.orm
 
