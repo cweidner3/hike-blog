@@ -11,6 +11,7 @@ from jsonschema import ValidationError
 import werkzeug.exceptions
 
 from src.bp.hikes import bp_hikes
+from src.bp.tracks import bp_tracks
 from src.common import get_secret
 from src.db.core import JsonSerializer
 
@@ -39,3 +40,4 @@ def errorhandler(error: Exception):
 
 
 app.register_blueprint(bp_hikes)
+app.register_blueprint(bp_tracks)

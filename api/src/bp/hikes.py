@@ -95,6 +95,16 @@ def _gpx_track_to_db(session: Session, hike_id: int, item: gpx.GpxTrack) -> RetT
 
 ####################################################################################################
 
+@bp_hikes.route('/', methods=['GET'])
+def list_hikes():
+    with Session(engine) as session:
+        hikes = session.execute(
+            select(Hike)
+        ).scalars()
+        hikes = list(map(lambda x: x.json, map(flask.jsonify, hikes)))
+    return {'data': hikes}
+
+
 @bp_hikes.route('/new', methods=['POST'])
 @expects_json(NEW_HIKE_SCHEMA, check_formats=True)
 def new_hike():
@@ -115,15 +125,24 @@ def new_hike():
     return hike
 
 
-@bp_hikes.route('/<int:hike_id>', methods=['DELETE'])
-def delete_hike(hike_id: int):
+@bp_hikes.route('/<int:hike_id>', methods=['GET', 'DELETE'])
+def one_hike(hike_id: int):
+    ''' Manage a hike instance. '''
     with Session(engine) as session:
-        session.execute(
-            delete(Hike)
-            .where(Hike.id == hike_id)
-        )
-        session.commit()
-    return {'status': 'OK'}
+        if flask.request.method == 'DELETE':
+            session.execute(
+                delete(Hike)
+                .where(Hike.id == hike_id)
+            )
+            session.commit()
+            return {'status': 'OK'}
+        if flask.request.method == 'GET':
+            hike = session.execute(
+                select(Hike)
+                .where(Hike.id == hike_id)
+            ).scalar_one()
+            return hike
+        raise ValueError(f'Unhandled request method type "{flask.request.method}"')
 
 
 @bp_hikes.route('/<int:hike_id>/data', methods=['POST'])
