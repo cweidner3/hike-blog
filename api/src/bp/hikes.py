@@ -32,6 +32,7 @@ def _gpx_wp_to_db(session: Session, hike_id: int, item: gpx.GpxWaypoint) -> Wayp
         parent=hike_id,
         name=item.name,
         description=item.description,
+        time=item.time,
         latitude=item.coords[0],
         longitude=item.coords[1],
         elevation=item.coords[2],
