@@ -11,3 +11,4 @@ isoduration
 rfc3986-validator
 requests
 pytz
+Pillow

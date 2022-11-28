@@ -3,15 +3,21 @@ Collection of commonly used functions/routines.
 '''
 
 from datetime import datetime
+import io
 import logging
 import os
 from pathlib import Path
-from typing import Union
+import re
+from typing import Optional, Union
 
+import PIL.ExifTags
+import PIL.Image
 import flask
 import flask.logging
 import pytz
 
+
+EXIF_TIME_PAT = re.compile(r'^(\d{4}):(\d{2}):(\d{2})')
 
 def get_secret(name: str, default: str = '') -> str:
     '''
@@ -65,3 +71,23 @@ def to_datetime(value: Union[str, datetime]) -> datetime:
     if ret.tzinfo is None or ret.tzinfo.utcoffset(ret) is None:
         ret = ret.replace(tzinfo=pytz.utc)
     return ret
+
+
+def picture_timestamp(img_data: bytes) -> Optional[datetime]:
+    img = PIL.Image.open(io.BytesIO(img_data))
+    exifdata = img.getexif()
+    for tag_id in exifdata:
+        tag = PIL.ExifTags.TAGS.get(tag_id, tag_id)
+        if tag == 'DateTime':
+            data = exifdata.get(tag_id)
+            if isinstance(data, bytes):
+                data = data.decode()
+            if data:
+                data = EXIF_TIME_PAT.sub(r'\1-\2-\3', data)
+            return to_datetime(data) if data else None
+    return None
+
+
+def picture_format(img_data: bytes) -> Optional[str]:
+    img = PIL.Image.open(io.BytesIO(img_data))
+    return img.format
