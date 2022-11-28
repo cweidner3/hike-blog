@@ -2,6 +2,7 @@
 Database setup and engine provider.
 '''
 
+from datetime import datetime
 import os
 from typing import Dict, Optional
 
@@ -40,6 +41,8 @@ class JsonSerializer(flask.json.JSONEncoder):
                 it_ = data._sa_class_manager.keys()  # pylint: disable=protected-access
                 it_ = map(lambda x: (f'{x}', _nested(getattr(data, x))), it_)
                 return dict(it_)
+            if isinstance(data, datetime):
+                return data.isoformat()
             if isinstance(data, dict):
                 it_ = data.items()
                 it_ = map(lambda x: (x[0], _nested(x[1])), it_)
