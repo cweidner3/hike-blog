@@ -62,7 +62,6 @@ class GpxElement:
 
     def _conv_datetime(self, value: Optional[str]) -> Optional[datetime]:
         if value:
-            value = value.replace('Z', '-00:00')
             return datetime.fromisoformat(value)
         return None
 
