@@ -2,12 +2,15 @@
 Collection of commonly used functions/routines.
 '''
 
+from datetime import datetime
+import logging
 import os
 from pathlib import Path
-import logging
+from typing import Union
 
-import flask.logging
 import flask
+import flask.logging
+import pytz
 
 
 def get_secret(name: str, default: str = '') -> str:
@@ -48,3 +51,17 @@ class _Cached:
 
 
 GLOBALS = _Cached()
+
+
+def to_datetime(value: Union[str, datetime]) -> datetime:
+    '''
+    Parse a timestamp to datetime or ensure timezone is set. Since the database is likely to drop
+    the timestamp, we will assume naive timestamps are intended to be UTC.
+    '''
+    if isinstance(value, datetime):
+        ret = value
+    else:
+        ret = datetime.fromisoformat(value)
+    if ret.tzinfo is None or ret.tzinfo.utcoffset(ret) is None:
+        ret = ret.replace(tzinfo=pytz.utc)
+    return ret

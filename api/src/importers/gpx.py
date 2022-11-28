@@ -9,6 +9,8 @@ import operator
 from typing import Iterator, List, Optional, Tuple, Union
 import xml.etree.ElementTree as ET
 
+from src.common import to_datetime
+
 NAMESPACE = 'http://www.topografix.com/GPX/1/1'
 NS = 'gpx'
 
@@ -62,7 +64,7 @@ class GpxElement:
 
     def _conv_datetime(self, value: Optional[str]) -> Optional[datetime]:
         if value:
-            return datetime.fromisoformat(value)
+            return to_datetime(value)
         return None
 
     def _find(self, node: ET.Element, tag: str) -> Optional[ET.Element]:

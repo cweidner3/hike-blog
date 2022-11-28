@@ -1,10 +1,11 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=too-few-public-methods
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, Text, Date
+from sqlalchemy import Column, Date, Float, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
 
 from src.db.base import Base
+from src.db.custom import AwareDateTime
 
 
 class Hike(Base):
@@ -81,7 +82,7 @@ class TrackData(Base):
     id = Column(Integer, primary_key=True)
     segment = Column(Integer, ForeignKey(TrackSegment.id, ondelete='CASCADE'), nullable=False)
 
-    time = Column(DateTime)
+    time = Column(AwareDateTime)
     latitude = Column(Float)
     longitude = Column(Float)
     elevation = Column(Float)
@@ -96,7 +97,7 @@ class Waypoint(Base):
     name = Column(Text)
     description = Column(Text)
 
-    time = Column(DateTime)
+    time = Column(AwareDateTime)
     latitude = Column(Float)
     longitude = Column(Float)
     elevation = Column(Float)

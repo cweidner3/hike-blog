@@ -6,7 +6,9 @@ Create Date: 2022-11-27 16:12:05.928490
 
 """
 from alembic import op
-from sqlalchemy import Column, Text, DateTime, Float, ForeignKey, Integer
+from sqlalchemy import Column, Float, ForeignKey, Integer, Text
+
+from src.db.custom import AwareDateTime
 
 
 # revision identifiers, used by Alembic.
@@ -33,7 +35,7 @@ def upgrade() -> None:
         'trackdata',
         Column('id', Integer, primary_key=True),
         Column('segment', Integer, ForeignKey('tracksegments.id', ondelete='CASCADE'), nullable=False),
-        Column('time', DateTime),
+        Column('time', AwareDateTime),
         Column('latitude', Float),
         Column('longitude', Float),
         Column('elevation', Float),
@@ -44,7 +46,7 @@ def upgrade() -> None:
         Column('parent', Integer, ForeignKey('hikes.id', ondelete='CASCADE'), nullable=False),
         Column('name', Text),
         Column('description', Text),
-        Column('time', DateTime),
+        Column('time', AwareDateTime),
         Column('latitude', Float),
         Column('longitude', Float),
         Column('elevation', Float),
