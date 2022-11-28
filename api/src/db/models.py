@@ -1,7 +1,7 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=too-few-public-methods
 
-from sqlalchemy import Column, Date, Float, ForeignKey, Integer, Text
+from sqlalchemy import Column, Date, Float, ForeignKey, Integer, LargeBinary, Text
 from sqlalchemy.orm import relationship
 
 from src.db.base import Base
@@ -18,6 +18,7 @@ class Hike(Base):
 
     tracks = relationship('Track', cascade='all, delete', passive_deletes=True)
     waypoints = relationship('Waypoint', cascade='all, delete', passive_deletes=True)
+    pictures = relationship('Picture', cascade='all, delete', passive_deletes=True)
 
     @property
     def serialized(self) -> dict:
@@ -29,6 +30,7 @@ class Hike(Base):
             'end': self.end,
             'tracks': list(map(lambda x: x.id, self.tracks)),
             'waypoints': list(map(lambda x: x.id, self.waypoints)),
+            'pictures': list(map(lambda x: (x.id, f'{x.name}.{x.fmt}'), self.pictures)),
         }
         return ret
 
@@ -101,3 +103,15 @@ class Waypoint(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     elevation = Column(Float)
+
+
+class Picture(Base):
+    __tablename__ = 'pictures'
+
+    id = Column(Integer, primary_key=True)
+    parent = Column(Integer, ForeignKey(Hike.id, ondelete='CASCADE'), nullable=False)
+
+    name = Column(Text, nullable=False)
+    fmt = Column(Text, nullable=False)
+    time = Column(AwareDateTime, nullable=False)
+    data = Column(LargeBinary, nullable=False)
