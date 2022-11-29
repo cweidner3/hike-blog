@@ -115,3 +115,15 @@ class Picture(Base):
     fmt = Column(Text, nullable=False)
     time = Column(AwareDateTime, nullable=False)
     data = Column(LargeBinary, nullable=False)
+
+    @property
+    def serialized(self) -> dict:
+        ''' Return dict for use when serializing. '''
+        ret = {
+            'id': self.id,
+            'parent': self.parent,
+            'name': self.name,
+            'fmt': self.fmt,
+            'time': self.time,
+        }
+        return ret

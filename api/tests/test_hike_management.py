@@ -6,11 +6,11 @@ from pathlib import Path
 import unittest
 
 import requests
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from src.db.models import Hike
-from tests.common import DATA_FOLDER, engine, get_logger, query_route
+from src.db.models import Hike, Picture
+from tests.common import DATA_FOLDER, TESTS_FOLDER, engine, get_logger, query_route
 
 _TIMEOUT = 10
 
@@ -69,3 +69,55 @@ class TestHikeManagement(unittest.TestCase):
             files=files,
         )
         self.assertEqual(resp.status_code, 200)
+
+
+class TestHikeData(unittest.TestCase):
+
+    PL_GOOD = {'name': 'test-hike-2', 'start': '2022-11-22T10:00:00-05:00'}
+
+    def setUp(self) -> None:
+        with Session(engine) as session:
+            hike = session.execute(
+                select(Hike.id, Hike.name)
+                .where(Hike.name == self.PL_GOOD['name'])
+            ).one_or_none()
+            if hike is None:
+                hike_o = Hike(
+                    name=self.PL_GOOD['name'],
+                    start=self.PL_GOOD['start'],
+                )
+                session.add(hike_o)
+                session.flush()
+                hike = session.execute(
+                    select(Hike.id, Hike.name)
+                    .where(Hike.name == self.PL_GOOD['name'])
+                ).one()
+            self._hike = hike
+            session.commit()
+        return super().setUp()
+
+    def test_upload_pictures(self):
+        files = [
+            'test_data/2022-05-07 10.38.57.jpg',
+            'test_data/c0f89c4.png',
+        ]
+        files = map(lambda x: Path(TESTS_FOLDER, x), files)
+        files = list(files)
+        with Session(engine) as session:
+            session.execute(
+                delete(Picture)
+                .where(Picture.name in list(map(lambda x: x.name, files)))
+            )
+            session.commit()
+        for file in files:
+            with self.subTest(file=file):
+                with open(file, 'rb') as inf:
+                    resp = requests.post(
+                        query_route('api', f'/pictures/hike/{self._hike[0]}'),
+                        files={file.name: inf},
+                        timeout=_TIMEOUT,
+                    )
+                    self.assertEqual(resp.status_code, 200)
+                    self.assertIn('status', resp.json())
+                    self.assertIn('created', resp.json())
+                    self.assertEqual(resp.json()['status'], 'OK')
