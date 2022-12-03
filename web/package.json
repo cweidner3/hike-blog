@@ -7,12 +7,15 @@
     "@testing-library/react": "^13.2.0",
     "@testing-library/user-event": "^13.5.0",
     "bulma": "^0.9.4",
+    "bulma-prefers-dark": "^0.1.0-beta.1",
     "list-react-files": "^0.2.0",
     "mapbox-gl": "^2.8.2",
+    "node-sass": "^7.0.3",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
     "react-router-dom": "^6.4.3",
     "react-scripts": "5.0.1",
+    "sass": "^1.56.1",
     "web-vitals": "^2.1.4",
     "xml2json": "^0.12.0"
   },
@@ -20,7 +23,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "css-build": "node-sass --omit-source-map-url src/sass/scheme.scss src/css/scheme.css"
   },
   "eslintConfig": {
     "extends": [
