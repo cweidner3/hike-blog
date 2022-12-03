@@ -4,10 +4,10 @@ import Navbar from '../Navbar.jsx';
 
 function Layout(props = {}) {
     return (
-        <>
+        <div className='container'>
             <Navbar />
             <Outlet />
-        </>
+        </div>
     );
 }
 
