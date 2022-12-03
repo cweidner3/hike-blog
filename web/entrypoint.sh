@@ -2,6 +2,4 @@
 
 set -e
 
-npm run css-build
-
 exec "$@"
