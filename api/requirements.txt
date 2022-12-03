@@ -12,3 +12,4 @@ rfc3986-validator
 requests
 pytz
 Pillow
+flask-cors

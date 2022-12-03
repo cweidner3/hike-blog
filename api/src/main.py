@@ -9,6 +9,7 @@ from flask import Flask
 import flask.logging
 from jsonschema import ValidationError
 import werkzeug.exceptions
+from flask_cors import CORS
 
 from src.bp.hikes import bp_hikes
 from src.bp.pics import bp_pics
@@ -20,6 +21,7 @@ app = Flask(__name__)
 app.debug = True
 app.json_encoder = JsonSerializer
 app.secret_key = get_secret('secret-key', 'my-definately-very-complex-secret')
+CORS(app)
 
 LOG = flask.logging.create_logger(app)
 

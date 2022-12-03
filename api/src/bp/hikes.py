@@ -129,6 +129,7 @@ def new_hike():
 @bp_hikes.route('/<int:hike_id>', methods=['GET', 'DELETE'])
 def one_hike(hike_id: int):
     ''' Manage a hike instance. '''
+    GLOBALS.logger.debug('Hike Id: %d', hike_id)
     with Session(engine) as session:
         if flask.request.method == 'DELETE':
             session.execute(
@@ -142,7 +143,24 @@ def one_hike(hike_id: int):
                 select(Hike)
                 .where(Hike.id == hike_id)
             ).scalar_one()
-            return hike
+            if flask.request.args.get('includeTrack', 'false') == 'true':
+                trackdata = hike.tracks
+                trackdata = map(lambda x: list(map(
+                    lambda y: list(map(lambda z: z.serialized, y.points)),
+                    x.segments
+                )), trackdata)
+                trackdata = list(trackdata)
+
+                waypointdata = hike.waypoints
+                waypointdata = map(lambda x: x.serialized, waypointdata)
+                waypointdata = list(waypointdata)
+
+                ret = flask.jsonify(hike).json
+                assert isinstance(ret, dict)
+                ret['tracks'] = trackdata
+                ret['waypoints'] = waypointdata
+                return ret
+            return flask.jsonify(hike)
         raise ValueError(f'Unhandled request method type "{flask.request.method}"')
 
 

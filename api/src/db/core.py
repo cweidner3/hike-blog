@@ -54,4 +54,4 @@ class JsonSerializer(flask.json.JSONEncoder):
         return _nested(o)
 
 
-engine = sqlalchemy.create_engine(_get_db_uri())
+engine = sqlalchemy.create_engine(_get_db_uri(), echo=True)
