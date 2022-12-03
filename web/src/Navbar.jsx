@@ -1,8 +1,37 @@
-import {useState} from 'react';
-import { BrowserRouter, Route, Link } from 'react-router-dom';
+import {useEffect, useState} from 'react';
+
+function setDarkMode() {
+    const elem = document.querySelector('body');
+
+    let darkMode = true;
+    const matchPat = /.*(; )?darkMode=(true|false)(; )?.*/;
+
+    if (document.cookie.search(matchPat) > -1) {
+        const ret = document.cookie.match(matchPat);
+        darkMode = ret[2] === 'true';
+    } else {
+        const exp = new Date(Date.now() + (100 * 365 * 24 * 60 * 60 * 1000));
+        document.cookie = `darkMode=true; expires=${exp}; path=/`;
+    }
+
+    elem.className = (darkMode) ? 'dark' : '';
+
+    return true;
+}
 
 function Navbar(props = {}) {
     const [isActive, setIsActive] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, [])
+
+    useEffect(() => {
+        if (mounted) {
+            setDarkMode();
+        }
+    }, [mounted])
 
     return (
         <nav className='navbar is-primary'>
