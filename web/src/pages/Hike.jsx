@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from "react";
-import {useHref, useParams} from "react-router-dom";
+import {useParams} from "react-router-dom";
 
 import mapboxgl, {
   NavigationControl,
@@ -7,20 +7,17 @@ import mapboxgl, {
 } from 'mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 
 import { apiCall } from "../util/fetch";
+import {
+    ATLANTA_COORDS,
+    ICONS,
+    MAP_SOURCES,
+    MAP_LAYERS,
+    TRACK_COLORS,
+} from './map-config';
 
 const {
   MAPBOXGL_ACCESS_TOKEN = 'pk.eyJ1IjoiY3dlaWRuZXIzIiwiYSI6ImNsM29wbDU0dTBxdjkzY3V2ajk2Y2I3MXcifQ.KYe1u_UcNKFneq-d0bCU0g',
 } = process.env;
-
-const ATLANTA_COORDS = [33.7675738, -84.5602143, 5];
-
-const TRACK_COLORS = [
-    '#000088',
-    '#003388',
-    '#AA0088',
-    '#00AA88',
-    '#FF0000',
-];
 
 mapboxgl.accessToken = MAPBOXGL_ACCESS_TOKEN;
 
@@ -41,7 +38,6 @@ function mapStyleUrl(name) {
   }
   return 'mapbox://styles/mapbox/outdoors-v11';
 }
-
 
 function newPictureGJ(pictureMeta) {
     const ret = {
@@ -78,11 +74,12 @@ function MapContainer(props = {}) {
     const [waypointsGJ, setWaypointsGJ] = useState([]);
     const [tracksGJ, setTracksGJ] = useState([]);
     const [pictureGJ, setPictureGJ] = useState(newPictureGJ());
+    const [selectedWaypoint, setSelectedWaypoint] = useState(null);
 
     const mapStyle = { height: '400px'};
 
     useEffect(() => {
-        const waypointsGJ = waypoints.map((x) => ({
+        const waypointsGJ = waypoints.map((x, xi) => ({
             type: 'Feature',
             geometry: {
                 type: 'Point',
@@ -90,6 +87,7 @@ function MapContainer(props = {}) {
             },
             properties: {
                 ...x,
+                id: xi,
             },
         }));
         setWaypointsGJ(waypointsGJ);
@@ -128,60 +126,25 @@ function MapContainer(props = {}) {
 
         mapRef.current.on('load', () => {
             console.debug('Map loaded, adding sources and layers now...')
-            /* Setup Tracks */
-            mapRef.current.addSource('tracks', {
-                type: 'geojson',
-                data: {
-                    type: 'FeatureCollection',
-                    features: [],
-                }
+
+            Object.entries(ICONS).forEach(([name, img]) => {
+                mapRef.current.loadImage(img, (error, image) => {
+                    if (error) { throw error };
+                    mapRef.current.addImage(name, image);
+                });
             });
-            mapRef.current.addLayer({
-                id: 'tracks',
-                type: 'line',
-                source: 'tracks',
-                paint: {
-                    'line-color': ['get', 'color'],
-                    'line-opacity': 1,
-                    'line-width': 3,
-                },
+
+            Object.entries(MAP_SOURCES).forEach(([id, config]) => {
+                mapRef.current.addSource(id, config);
+            });
+
+            MAP_LAYERS.forEach((layer) => {
+                mapRef.current.addLayer(layer);
             })
 
-            /* Setup Waypoints */
-            mapRef.current.addSource('waypoints', {
-                type: 'geojson',
-                data: {
-                    type: 'FeatureCollection',
-                    features: [],
-                }
-            });
-            mapRef.current.addLayer({
-                id: 'waypoints',
-                type: 'symbol',
-                source: 'waypoints',
-                layout: {
-                    'icon-image': 'harbor-15',
-                },
-            })
-
-            /* Setup Picture Icon */
-            mapRef.current.addSource('picture', {
-                type: 'geojson',
-                data: {
-                    type: 'FeatureCollection',
-                    features: [],
-                }
-            });
-            mapRef.current.addLayer({
-                id: 'picture',
-                type: 'symbol',
-                source: 'picture',
-                layout: {
-                    'icon-image': 'viewport-15',
-                },
-            })
-
-            mapRef.current.on('click', () => {
+            mapRef.current.on('click', 'waypoints', (e) => {
+                console.debug('Waypoint clicked', JSON.parse(JSON.stringify(e)));
+                setSelectedWaypoint(e.features[0].properties.id);
             });
 
             console.debug('Done')
@@ -222,6 +185,23 @@ function MapContainer(props = {}) {
             features: tracksGJ,
         })
     }, [tracksGJ, loaded2]);
+
+    useEffect(() => {
+        if (selectedWaypoint == null) {
+            return;
+        }
+        const wp = waypointsGJ.find((w) => w.properties.id === selectedWaypoint);
+        if (wp == null) {
+            console.warn(`Waypoint ${selectedWaypoint} could not be found`);
+            return;
+        }
+        new mapboxgl.Popup(
+        ).setLngLat(
+            wp.geometry.coordinates
+        ).setHTML(
+            `<h3>${wp.properties.name}</h3><p>${wp.properties.description}</p>`
+        )
+    }, [selectedWaypoint]);
 
     return (
         <div>
