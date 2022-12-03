@@ -12,8 +12,11 @@ services:
 
   web:
     build: ./web
+    ports:
+      - 3000:3000/tcp
     volumes:
     - ./web/src:/app/src:ro
+    - /app/src/css
 
   api:
     build: ./api

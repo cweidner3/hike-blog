@@ -9,6 +9,10 @@ up:
 down:
 	docker-compose down
 
+.PHONY: build
+build:
+	docker-compose build
+
 .PHONY: logs
 logs:
 	docker-compose logs -f $(CONT)
