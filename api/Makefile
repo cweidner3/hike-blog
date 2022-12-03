@@ -11,3 +11,7 @@ upgrade:
 .PHONY: downgrade
 downgrade:
 	alembic downgrade $(REV)
+
+.PHONY: testhike
+testhike:
+	python -m tests.scripts.upload_test_hike $(REPLACE)
