@@ -6,9 +6,7 @@ Create Date: 2022-11-27 22:18:00.532931
 
 """
 from alembic import op
-from sqlalchemy import Column, Text, LargeBinary, Integer, ForeignKey
-
-from src.db.custom import AwareDateTime
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, LargeBinary, Text
 
 
 # revision identifiers, used by Alembic.
@@ -25,7 +23,7 @@ def upgrade() -> None:
         Column('parent', Integer, ForeignKey('hikes.id', ondelete='CASCADE'), nullable=False),
         Column('name', Text, nullable=False),
         Column('fmt', Text, nullable=False),
-        Column('time', AwareDateTime, nullable=False),
+        Column('time', DateTime, nullable=False),
         Column('data', LargeBinary, nullable=False),
     )
 
