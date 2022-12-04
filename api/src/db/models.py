@@ -15,6 +15,9 @@ class Hike(Base):
     name = Column(Text, nullable=False)
     start = Column(Date)
     end = Column(Date)
+    title = Column(Text)
+    brief = Column(Text)
+    description = Column(Text)
 
     tracks = relationship('Track', cascade='all, delete', passive_deletes=True)
     waypoints = relationship('Waypoint', cascade='all, delete', passive_deletes=True)
@@ -115,6 +118,7 @@ class Picture(Base):
     fmt = Column(Text, nullable=False)
     time = Column(AwareDateTime, nullable=False)
     data = Column(LargeBinary, nullable=False)
+    description = Column(Text)
 
     @property
     def serialized(self) -> dict:
