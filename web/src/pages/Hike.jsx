@@ -126,7 +126,7 @@ function InteractiveZone(props = {}) {
         </div>
     );
     const closeButton = (
-        <div className={`${buttonClasses}`}>
+        <div className={`${buttonClasses}`} onClick={() => setter(['', null])}>
             X
         </div>
     );
@@ -311,12 +311,26 @@ function MapContainer(props = {}) {
     }, [tracksGJ, loaded2]);
 
     useEffect(() => {
-        if (!mapRef.current || selected[1] == null) {
+        if (!mapRef.current) {
             return;
         }
-        if (selected[0] == 'waypoint') {
-            setSelectedWaypoint(selected[1]);
+        const setters = {
+            'waypoint': setSelectedWaypoint,
         }
+        if (selected[1] == null) {
+            Object.values(setters).forEach((s) => {
+                s?.(null);
+            })
+            return;
+        }
+        Object.entries(setters).forEach(([k, v]) => {
+            if (k === selected[0]) {
+                v?.(selected[1]);
+            }
+            else {
+                v?.(null);
+            }
+        });
         mapRef.current.flyTo({
             center: selected[1].geometry.coordinates,
             zoom: 14.5,
@@ -365,16 +379,20 @@ function Hike(props = {}) {
     return (
         <div className="container">
             <div className="has-text-centered">
-                <h1 className="title">{(hike == null) ? '...' : hike.name}</h1>
-                <h2 className="title is-5">Brief here...</h2>
+                <h1 className="title">{(hike == null) ? '...' : hike.title ?? hike.name}</h1>
+                <h2 className="title is-5">{hike?.brief}</h2>
                 <p><i>({hike?.start} - {hike?.end})</i></p>
             </div>
 
             <div className="block"></div>
 
-            <div>
-                <p>test</p>
+            <div className="card has-background-grey-light">
+                <div className="card-content">
+                    <p>{hike?.description}</p>
+                </div>
             </div>
+
+            <div className="block"></div>
 
             <div>
                 <MapContainer
