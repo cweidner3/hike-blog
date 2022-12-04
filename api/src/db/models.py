@@ -1,7 +1,7 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=too-few-public-methods
 
-from sqlalchemy import Column, Date, Float, ForeignKey, Integer, LargeBinary, Text
+from sqlalchemy import Boolean, Column, Date, Float, ForeignKey, Integer, LargeBinary, Text
 from sqlalchemy.orm import relationship
 
 from src.db.base import Base
@@ -127,3 +127,13 @@ class Picture(Base):
             'time': self.time,
         }
         return ret
+
+
+class ApiSession(Base):
+    __tablename__ = 'session'
+
+    id = Column(Integer, primary_key=True)
+    key = Column(Text, unique=True, nullable=False)
+    username = Column(Text, nullable=False)
+    displayname = Column(Text, nullable=False)
+    admin = Column(Boolean, default=False)
