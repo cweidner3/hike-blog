@@ -2,14 +2,21 @@ import flask
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from src.common import GLOBALS, picture_timestamp, picture_format
+from src.common import GLOBALS, picture_format, picture_timestamp
 from src.db.core import engine
 from src.db.models import Picture
+from src.middleware import auth_as_admin
 
 bp_pics = flask.Blueprint('pics', __name__, url_prefix='/pictures')
 
+bp_pics_admin = flask.Blueprint('pics', __name__)
+bp_pics_admin.before_request(auth_as_admin)
 
-@bp_pics.route('', methods=['GET'])
+
+####################################################################################################
+# Read Only Routes
+
+@bp_pics.get('')
 def list_pics():
     ''' Return list of tracks. '''
     with Session(engine) as session:
@@ -28,13 +35,13 @@ def list_pics():
         raise ValueError(f'Unhandled request method type "{flask.request.method}"')
 
 
-@bp_pics.route('/', methods=['GET'])
+@bp_pics.get('/')
 def list_pics_():
     ''' Return list of tracks. '''
     return list_pics()
 
 
-@bp_pics.route('/<int:pic_id>', methods=['GET'])
+@bp_pics.get('/<int:pic_id>')
 def get_pic(pic_id: int):
     ''' Return list of tracks. '''
     with Session(engine) as session:
@@ -47,7 +54,10 @@ def get_pic(pic_id: int):
         raise ValueError(f'Unhandled request method type "{flask.request.method}"')
 
 
-@bp_pics.route('/hike/<int:hike_id>', methods=['POST'])
+####################################################################################################
+# Restricted Routes
+
+@bp_pics_admin.post('/hike/<int:hike_id>')
 def upload_picture(hike_id: int):
     ''' Return list of tracks. '''
     with Session(engine) as session:
@@ -71,3 +81,8 @@ def upload_picture(hike_id: int):
         created = list(map(lambda x: x.json, map(flask.jsonify, created)))
         session.commit()
         return {'status': 'OK', 'created': created}
+
+
+####################################################################################################
+
+bp_pics.register_blueprint(bp_pics_admin)

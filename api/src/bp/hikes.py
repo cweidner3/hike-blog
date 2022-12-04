@@ -10,8 +10,13 @@ from src.common import GLOBALS
 from src.db.core import engine
 from src.db.models import Hike, TrackData, TrackSegment, Waypoint, Track
 from src.importers import gpx
+from src.middleware import auth_as_admin
 
 bp_hikes = flask.Blueprint('hikes', __name__, url_prefix='/hikes')
+
+
+bp_hikes_admin = flask.Blueprint('hikes', __name__)
+bp_hikes_admin.before_request(auth_as_admin)
 
 NEW_HIKE_SCHEMA = {
     'type': 'object',
@@ -95,9 +100,11 @@ def _gpx_track_to_db(session: Session, hike_id: int, item: gpx.GpxTrack) -> RetT
 
 
 ####################################################################################################
+# Read Only Routes
 
-@bp_hikes.route('/', methods=['GET'])
+@bp_hikes.get('/')
 def list_hikes():
+    ''' List uploaded hikes. '''
     with Session(engine) as session:
         hikes = session.execute(
             select(Hike)
@@ -106,9 +113,48 @@ def list_hikes():
     return {'data': hikes}
 
 
-@bp_hikes.route('/new', methods=['POST'])
+@bp_hikes.get('')
+def list_hikes_():
+    ''' List uploaded hikes. '''
+    return list_hikes()
+
+
+@bp_hikes.get('/<int:hike_id>')
+def one_hike(hike_id: int):
+    ''' Manage a hike instance. '''
+    GLOBALS.logger.debug('Hike Id: %d', hike_id)
+    with Session(engine) as session:
+        hike = session.execute(
+            select(Hike)
+            .where(Hike.id == hike_id)
+        ).scalar_one()
+        if flask.request.args.get('includeTrack', 'false') == 'true':
+            trackdata = hike.tracks
+            trackdata = map(lambda x: list(map(
+                lambda y: list(map(lambda z: z.serialized, y.points)),
+                x.segments
+            )), trackdata)
+            trackdata = list(trackdata)
+
+            waypointdata = hike.waypoints
+            waypointdata = map(lambda x: x.serialized, waypointdata)
+            waypointdata = list(waypointdata)
+
+            ret = flask.jsonify(hike).json
+            assert isinstance(ret, dict)
+            ret['tracks'] = trackdata
+            ret['waypoints'] = waypointdata
+            return ret
+        return flask.jsonify(hike)
+
+
+####################################################################################################
+# Restricted Routes
+
+@bp_hikes_admin.post('/new')
 @expects_json(NEW_HIKE_SCHEMA, check_formats=True)
 def new_hike():
+    ''' Create a new hike. '''
     def _conv(item: Tuple[str, Any]) -> Tuple[str, Any]:
         key, value = item
         if key in ('start', 'end'):
@@ -126,45 +172,20 @@ def new_hike():
     return hike
 
 
-@bp_hikes.route('/<int:hike_id>', methods=['GET', 'DELETE'])
-def one_hike(hike_id: int):
+@bp_hikes_admin.delete('/<int:hike_id>')
+def hike_delete_one(hike_id: int):
     ''' Manage a hike instance. '''
     GLOBALS.logger.debug('Hike Id: %d', hike_id)
     with Session(engine) as session:
-        if flask.request.method == 'DELETE':
-            session.execute(
-                delete(Hike)
-                .where(Hike.id == hike_id)
-            )
-            session.commit()
-            return {'status': 'OK'}
-        if flask.request.method == 'GET':
-            hike = session.execute(
-                select(Hike)
-                .where(Hike.id == hike_id)
-            ).scalar_one()
-            if flask.request.args.get('includeTrack', 'false') == 'true':
-                trackdata = hike.tracks
-                trackdata = map(lambda x: list(map(
-                    lambda y: list(map(lambda z: z.serialized, y.points)),
-                    x.segments
-                )), trackdata)
-                trackdata = list(trackdata)
-
-                waypointdata = hike.waypoints
-                waypointdata = map(lambda x: x.serialized, waypointdata)
-                waypointdata = list(waypointdata)
-
-                ret = flask.jsonify(hike).json
-                assert isinstance(ret, dict)
-                ret['tracks'] = trackdata
-                ret['waypoints'] = waypointdata
-                return ret
-            return flask.jsonify(hike)
-        raise ValueError(f'Unhandled request method type "{flask.request.method}"')
+        session.execute(
+            delete(Hike)
+            .where(Hike.id == hike_id)
+        )
+        session.commit()
+        return {'status': 'OK'}
 
 
-@bp_hikes.route('/<int:hike_id>/data', methods=['POST'])
+@bp_hikes_admin.post('/<int:hike_id>/data')
 def import_data(hike_id: int):
     with Session(engine) as session:
         hike = session.execute(
@@ -198,3 +219,8 @@ def import_data(hike_id: int):
         hike = flask.jsonify(hike).json
         GLOBALS.logger.warning('serialized hike: %s', hike)
     return {'status': 'OK', 'items_added': counts, 'hike': hike}
+
+
+####################################################################################################
+
+bp_hikes.register_blueprint(bp_hikes_admin)
