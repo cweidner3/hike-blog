@@ -25,6 +25,12 @@ export const ICONS = {
     poi: iconMapPin,
 };
 
+export const ICON_SIZES = {
+    camera: 0.05,
+    waypoint: 0.05,
+    poi: 0.05,
+}
+
 export const MAP_SOURCES = {
     'tracks': {
         type: 'geojson',
@@ -93,7 +99,7 @@ export const MAP_LAYERS = [
         source: 'waypoints',
         layout: {
             'icon-image': 'waypoint',
-            'icon-size': 0.05,
+            'icon-size': ['get', 'iconSize'], //  ICON_SIZES.waypoint,
             'icon-anchor': 'bottom',
             'icon-ignore-placement': true,
             'text-allow-overlap': true,
@@ -109,11 +115,11 @@ export const MAP_LAYERS = [
         source: 'picture',
         layout: {
             'icon-image': 'camera',
-            'icon-size': 0.05,
+            'icon-size': ICON_SIZES.camera,
             'icon-anchor': 'bottom',
         },
         paint: {
-            'icon-image': COLOR_MAP.camera ?? COLOR_MAP['default'],
+            'icon-color': COLOR_MAP.camera ?? COLOR_MAP['default'],
         },
     },
 ];

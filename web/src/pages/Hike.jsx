@@ -1,10 +1,18 @@
 import {useEffect, useRef, useState} from "react";
 import {useParams} from "react-router-dom";
+import {renderToString} from 'react-dom/server';
+import ReactDOM from 'react-dom';
 
 import mapboxgl, {
   NavigationControl,
   ScaleControl,
 } from 'mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {
+    faChevronLeft,
+    faChevronRight,
+} from '@fortawesome/free-solid-svg-icons';
 
 import { apiCall } from "../util/fetch";
 import {
@@ -13,6 +21,7 @@ import {
     MAP_SOURCES,
     MAP_LAYERS,
     TRACK_COLORS,
+    ICON_SIZES,
 } from './map-config';
 
 const {
@@ -55,10 +64,111 @@ function newPictureGJ(pictureMeta) {
 }
 
 
+function WaypointPopup(props = {}) {
+    const {
+        selectedWaypoint = {properties: {}, geometry: {}},
+    } = props;
+
+    const name = selectedWaypoint.properties.name;
+    const description = selectedWaypoint.properties.description;
+
+    const visibleCoords = [
+        selectedWaypoint.properties.latitude,
+        selectedWaypoint.properties.longitude,
+        selectedWaypoint.properties.elevation,
+    ]
+
+    return (
+        <div className="content">
+            <p className="has-text-weight-bold">{name}</p>
+            <p>{JSON.stringify(visibleCoords).replace(',', ', ')}</p>
+            <p>{description}</p>
+        </div>
+    );
+}
+
+function InteractiveZone(props = {}) {
+    const {
+        type = '',
+        selected = null,
+        sourceList = [],
+        setter = ([_t, _e]) => {},
+    } = props;
+
+    if (selected == null) {
+        return <></>;
+    }
+
+    let comp = null;
+    if (type === 'waypoint') {
+        comp = (
+            <WaypointPopup
+                selectedWaypoint={selected}
+            />
+        );
+    }
+
+    const wpId = selected.properties.id;
+    const prevWp = (wpId === 0) ? null : sourceList[wpId - 1];
+    const nextWp = (wpId >= (sourceList.length - 1)) ? null : sourceList[wpId + 1];
+
+    const buttonClasses = "tile is-child notification has-background-grey-lighter m-2";
+    const buttonSyle = {
+        height: '100%',
+    }
+
+    const leftButton = (prevWp == null) ? null : (
+        <div
+            className={`${buttonClasses}`}
+            onClick={() => setter([type, prevWp])}
+        >
+            <FontAwesomeIcon icon={faChevronLeft}/>
+        </div>
+    );
+    const closeButton = (
+        <div className={`${buttonClasses}`}>
+            X
+        </div>
+    );
+    const rightButton = (nextWp == null) ? (<div className="tile is-child notification"></div>) : (
+        <div
+            className={buttonClasses}
+            onClick={() => setter([type, nextWp])}
+        >
+            <FontAwesomeIcon icon={faChevronRight}/>
+        </div>
+    );
+
+    return (
+        <div className="content has-background-primary p-2">
+            <div className="card has-background-white-ter">
+                <div className="card-content">
+                    <div className="content">
+                        <div className="tile is-ancestor">
+                            <div className="tile is-parent">
+                                {leftButton}
+                                <div className="tile notification is-child has-background-grey-lighter">
+                                    {comp}
+                                </div>
+                                <div className="tile is-parent is-vertical is-1">
+                                    {closeButton}
+                                    {rightButton}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function MapContainer(props = {}) {
     const {
         tracks = [],
         waypoints = [],
+        startingCoords = [ATLANTA_COORDS[1], ATLANTA_COORDS[0]],
+        startingZoom = ATLANTA_COORDS[2],
     } = props;
 
 
@@ -75,6 +185,9 @@ function MapContainer(props = {}) {
     const [tracksGJ, setTracksGJ] = useState([]);
     const [pictureGJ, setPictureGJ] = useState(newPictureGJ());
     const [selectedWaypoint, setSelectedWaypoint] = useState(null);
+    const [popup, setPopup] = useState(null);
+    const [selected, setSelected] = useState(['', null]);
+    const [clusterClicked, setClusterClicked] = useState(null);
 
     const mapStyle = { height: '400px'};
 
@@ -88,10 +201,13 @@ function MapContainer(props = {}) {
             properties: {
                 ...x,
                 id: xi,
+                iconSize: ICON_SIZES.waypoint * (
+                    (selectedWaypoint?.properties?.id == xi) ? 2 : 1
+                ),
             },
         }));
         setWaypointsGJ(waypointsGJ);
-    }, [waypoints]);
+    }, [waypoints, selectedWaypoint?.properties?.id]);
 
     useEffect(() => {
         const tracksGJ = tracks.map((t, ti) => ({
@@ -114,8 +230,8 @@ function MapContainer(props = {}) {
         mapRef.current = new mapboxgl.Map({
             container: mapContRef.current,
             style: currentStyle,
-            center: [ATLANTA_COORDS[1], ATLANTA_COORDS[0]],
-            zoom: ATLANTA_COORDS[2],
+            center: startingCoords,
+            zoom: startingZoom,
         });
 
         mapRef.current.on('move', () => {
@@ -143,8 +259,16 @@ function MapContainer(props = {}) {
             })
 
             mapRef.current.on('click', 'waypoints', (e) => {
-                console.debug('Waypoint clicked', JSON.parse(JSON.stringify(e)));
-                setSelectedWaypoint(e.features[0].properties.id);
+                console.debug('Waypoint clicked', JSON.parse(JSON.stringify(e.features)));
+                setSelected(['waypoint', e.features[0]]);
+            });
+
+            mapRef.current.on('click', 'waypoints-clustered', (e) => {
+                console.debug('Waypoint (clustered) clicked', JSON.parse(JSON.stringify(e.features)));
+                mapRef.current.flyTo({
+                    center: e.features[0].geometry.coordinates,
+                    zoom: 14.5,
+                })
             });
 
             console.debug('Done')
@@ -160,11 +284,11 @@ function MapContainer(props = {}) {
             return
         }
 
-        const firstwp = waypoints[0];
+        // const firstwp = waypoints[0];
 
-        // Ensure the map starts off focused on the hike region
-        mapRef.current.setCenter([firstwp.longitude, firstwp.latitude]);
-        mapRef.current.setZoom(7);
+        // // Ensure the map starts off focused on the hike region
+        // mapRef.current.setCenter([firstwp.longitude, firstwp.latitude]);
+        // mapRef.current.setZoom(7);
 
         console.debug('waypointsGJ', waypointsGJ);
         mapRef.current.getSource('waypoints').setData({
@@ -187,28 +311,34 @@ function MapContainer(props = {}) {
     }, [tracksGJ, loaded2]);
 
     useEffect(() => {
-        if (selectedWaypoint == null) {
+        if (!mapRef.current || selected[1] == null) {
             return;
         }
-        const wp = waypointsGJ.find((w) => w.properties.id === selectedWaypoint);
-        if (wp == null) {
-            console.warn(`Waypoint ${selectedWaypoint} could not be found`);
-            return;
+        if (selected[0] == 'waypoint') {
+            setSelectedWaypoint(selected[1]);
         }
-        new mapboxgl.Popup(
-        ).setLngLat(
-            wp.geometry.coordinates
-        ).setHTML(
-            `<h3>${wp.properties.name}</h3><p>${wp.properties.description}</p>`
-        )
-    }, [selectedWaypoint]);
+        mapRef.current.flyTo({
+            center: selected[1].geometry.coordinates,
+            zoom: 14.5,
+        })
+    }, [selected[1]]);
 
     return (
         <div>
             <div ref={mapContRef} className="Map" style={mapStyle} />
+
             <div className="sidebar">
                 Latitude: {lat} | Longitude: {lon} | Zoom {zoom}
             </div>
+
+            <div className="block"></div>
+
+            <InteractiveZone
+                type={selected[0]}
+                selected={selected[1]}
+                setter={setSelected}
+                sourceList={(selected[0] === 'waypoint') ? waypointsGJ : []}
+            />
         </div>
     );
 }
@@ -251,6 +381,12 @@ function Hike(props = {}) {
                     hike={hike}
                     tracks={tracks}
                     waypoints={waypoints}
+                    startingCoords={(
+                        ['longitude', 'latitude'].every((x) => !!hike && !!hike[x])
+                        ? [hike?.longitude, hike?.latitude]
+                        : undefined
+                    )}
+                    startingZoom={hike?.zoom}
                 />
             </div>
         </div>
