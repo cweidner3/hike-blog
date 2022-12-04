@@ -10,7 +10,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from src.db.models import Hike, Picture
-from tests.common import DATA_FOLDER, TESTS_FOLDER, engine, get_logger, query_route
+from tests.common import DATA_FOLDER, TESTS_FOLDER, engine, get_logger, query_route, get_auth_key
 
 _TIMEOUT = 10
 
@@ -28,6 +28,10 @@ class TestHikeManagement(unittest.TestCase):
         ),
     ]
 
+    @classmethod
+    def setUpClass(cls):
+        cls.AUTH_KEY = get_auth_key()
+
     def setUp(self) -> None:
         with Session(engine) as session:
             session.execute(
@@ -35,7 +39,20 @@ class TestHikeManagement(unittest.TestCase):
                 .where(Hike.name == self.PL_GOOD['name'])
             )
             session.commit()
+        self._headers = {
+            'Api-Session': self.AUTH_KEY,
+        }
         return super().setUp()
+
+    def test_create_delete_auth_fail(self):
+        ''' Ensure the auth is working. '''
+        data = self.PL_GOOD.copy()
+        resp = requests.post(
+            query_route('api', '/hikes/new'),
+            json=data,
+            timeout=_TIMEOUT,
+        )
+        self.assertEqual(resp.status_code, 401)
 
     def test_create_delete(self):
         '''
@@ -43,20 +60,34 @@ class TestHikeManagement(unittest.TestCase):
         returned hike id.
         '''
         data = self.PL_GOOD.copy()
-        resp = requests.post(query_route('api', '/hikes/new'), json=data, timeout=_TIMEOUT)
+        resp = requests.post(
+            query_route('api', '/hikes/new'),
+            json=data,
+            timeout=_TIMEOUT,
+            headers=self._headers,
+        )
         self.assertEqual(resp.status_code, 200)
         rdata = resp.json()
         self.assertIn('id', rdata)
         self.assertIn('name', rdata)
         self.assertIn('start', rdata)
 
-        resp = requests.delete(query_route('api', f'/hikes/{rdata["id"]}'), timeout=_TIMEOUT)
+        resp = requests.delete(
+            query_route('api', f'/hikes/{rdata["id"]}'),
+            timeout=_TIMEOUT,
+            headers=self._headers,
+        )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json()['status'], 'OK')
 
     def test_import_hike(self):
         data = self.PL_GOOD.copy()
-        resp = requests.post(query_route('api', '/hikes/new'), json=data, timeout=_TIMEOUT)
+        resp = requests.post(
+            query_route('api', '/hikes/new'),
+            json=data,
+            timeout=_TIMEOUT,
+            headers=self._headers,
+        )
         self.assertEqual(resp.status_code, 200)
         rdata = resp.json()
 
@@ -67,6 +98,7 @@ class TestHikeManagement(unittest.TestCase):
             query_route('api', f'/hikes/{rdata["id"]}/data'),
             timeout=_TIMEOUT,
             files=files,
+            headers=self._headers,
         )
         self.assertEqual(resp.status_code, 200)
 
@@ -75,7 +107,14 @@ class TestHikeData(unittest.TestCase):
 
     PL_GOOD = {'name': 'test-hike-2', 'start': '2022-11-22T10:00:00-05:00'}
 
+    @classmethod
+    def setUpClass(cls):
+        cls.AUTH_KEY = get_auth_key()
+
     def setUp(self) -> None:
+        self._headers = {
+            'Api-Session': self.AUTH_KEY,
+        }
         with Session(engine) as session:
             hike = session.execute(
                 select(Hike.id, Hike.name)
@@ -99,7 +138,7 @@ class TestHikeData(unittest.TestCase):
     def test_upload_pictures(self):
         files = [
             'test_data/2022-05-07 10.38.57.jpg',
-            'test_data/c0f89c4.png',
+            # 'test_data/c0f89c4.png',
         ]
         files = map(lambda x: Path(TESTS_FOLDER, x), files)
         files = list(files)
@@ -116,6 +155,7 @@ class TestHikeData(unittest.TestCase):
                         query_route('api', f'/pictures/hike/{self._hike[0]}'),
                         files={file.name: inf},
                         timeout=_TIMEOUT,
+                        headers=self._headers,
                     )
                     self.assertEqual(resp.status_code, 200)
                     self.assertIn('status', resp.json())

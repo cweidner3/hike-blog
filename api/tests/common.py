@@ -5,9 +5,11 @@ import subprocess
 from typing import Optional
 import urllib.parse
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
 
 from src.db.core import get_db_uri
+from src.db.models import ApiSession
 
 TESTS_FOLDER = Path(__file__).parent.resolve()
 ROOT_FOLDER = Path(TESTS_FOLDER, '../..').resolve()
@@ -120,6 +122,18 @@ engine = _create_engine()
 
 def get_logger() -> logging.Logger:
     return _CACHED.get_logger()
+
+
+def get_auth_key() -> str:
+    ''' Get an auth key to use in restricted requests. '''
+    with Session(engine) as session:
+        ret = session.execute(
+            select(ApiSession.key, ApiSession.admin)
+            .where(ApiSession.admin == True)  # pylint: disable=singleton-comparison
+            .limit(1)
+        ).all()
+        assert len(ret) > 0, f'Got {ret} instead'
+        return ret[0][0]
 
 
 if __name__ == '__main__':
