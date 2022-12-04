@@ -8,13 +8,14 @@ import logging
 import os
 from pathlib import Path
 import re
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import PIL.ExifTags
 import PIL.Image
 import flask
 import flask.logging
 import pytz
+import werkzeug.exceptions
 
 
 EXIF_TIME_PAT = re.compile(r'^(\d{4}):(\d{2}):(\d{2})')
@@ -91,3 +92,14 @@ def picture_timestamp(img_data: bytes) -> Optional[datetime]:
 def picture_format(img_data: bytes) -> Optional[str]:
     img = PIL.Image.open(io.BytesIO(img_data))
     return img.format
+
+
+def strict_schema(schema: Dict[str, Any]):
+    ''' Strictly check payload to ensure unknown keys are not provided. '''
+    data = flask.request.json
+    if data is None:
+        raise werkzeug.exceptions.BadRequest('Must provide a JSON payload')
+    accepted = list(schema['properties'].keys())
+    for key in data.keys():
+        if key not in accepted:
+            raise werkzeug.exceptions.BadRequest(f'Unknown key "{key}" in payload')

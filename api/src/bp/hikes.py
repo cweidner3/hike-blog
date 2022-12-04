@@ -6,7 +6,7 @@ from flask_expects_json import expects_json
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from src.common import GLOBALS
+from src.common import GLOBALS, strict_schema
 from src.db.core import engine
 from src.db.models import Hike, TrackData, TrackSegment, Waypoint, Track
 from src.importers import gpx
@@ -24,8 +24,24 @@ NEW_HIKE_SCHEMA = {
         'name': {'type': 'string'},
         'start': {'type': 'string', 'format': 'date-time'},
         'end': {'type': 'string', 'format': 'date-time'},
+        'title': {'type': 'string'},
+        'brief': {'type': 'string'},
+        'description': {'type': 'string'},
     },
     'required': ['name'],
+}
+
+UPDATE_HIKE_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'name': {'type': 'string'},
+        'start': {'type': 'string', 'format': 'date-time'},
+        'end': {'type': 'string', 'format': 'date-time'},
+        'title': {'type': 'string'},
+        'brief': {'type': 'string'},
+        'description': {'type': 'string'},
+    },
+    'required': [],
 }
 
 
@@ -155,6 +171,7 @@ def one_hike(hike_id: int):
 @expects_json(NEW_HIKE_SCHEMA, check_formats=True)
 def new_hike():
     ''' Create a new hike. '''
+    strict_schema(NEW_HIKE_SCHEMA)
     def _conv(item: Tuple[str, Any]) -> Tuple[str, Any]:
         key, value = item
         if key in ('start', 'end'):
@@ -181,6 +198,25 @@ def hike_delete_one(hike_id: int):
             delete(Hike)
             .where(Hike.id == hike_id)
         )
+        session.commit()
+        return {'status': 'OK'}
+
+
+@bp_hikes_admin.post('/<int:hike_id>')
+@expects_json(UPDATE_HIKE_SCHEMA, check_formats=True)
+def hike_update_one(hike_id: int):
+    ''' Manage a hike instance. '''
+    strict_schema(UPDATE_HIKE_SCHEMA)
+    GLOBALS.logger.debug('Hike Id: %d', hike_id)
+    GLOBALS.logger.debug('Update payload: %d', flask.request.json)
+    assert flask.request.json is not None
+    with Session(engine) as session:
+        ret = session.execute(
+            select(Hike)
+            .where(Hike.id == hike_id)
+        ).scalar_one()
+        for key, value in flask.request.json.items():
+            setattr(ret, key, value)
         session.commit()
         return {'status': 'OK'}
 

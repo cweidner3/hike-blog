@@ -13,7 +13,7 @@ help:
 
 .PHONY: test
 test:
-	python -m unittest $(TESTS)
+	python -m unittest -v $(TESTS)
 
 .PHONY: upgrade
 upgrade:
