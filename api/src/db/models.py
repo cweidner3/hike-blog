@@ -1,11 +1,17 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=too-few-public-methods
 
-from sqlalchemy import Boolean, Column, Date, Float, ForeignKey, Integer, LargeBinary, Text
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, LargeBinary, Text
 from sqlalchemy.orm import relationship
 
 from src.db.base import Base
 from src.db.custom import AwareDateTime
+
+
+class Timezone(Base):
+    __tablename__ = 'timezones'
+
+    name = Column(Text, primary_key=True, index=True)
 
 
 class Hike(Base):
@@ -13,8 +19,9 @@ class Hike(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(Text, nullable=False)
-    start = Column(Date)
-    end = Column(Date)
+    start = Column(AwareDateTime)
+    end = Column(AwareDateTime)
+    zone = Column(Text, ForeignKey(Timezone.name), nullable=False, server_default='UTC')
     title = Column(Text)
     brief = Column(Text)
     description = Column(Text)
@@ -31,6 +38,7 @@ class Hike(Base):
             'name': self.name,
             'start': self.start,
             'end': self.end,
+            'zone': self.zone,
             'title': self.title,
             'brief': self.brief,
             'description': self.description,

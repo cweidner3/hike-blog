@@ -6,7 +6,7 @@ from flask_expects_json import expects_json
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from src.common import GLOBALS, strict_schema
+from src.common import GLOBALS, strict_schema, to_datetime
 from src.db.core import engine
 from src.db.models import Hike, TrackData, TrackSegment, Waypoint, Track
 from src.importers import gpx
@@ -24,6 +24,7 @@ NEW_HIKE_SCHEMA = {
         'name': {'type': 'string'},
         'start': {'type': 'string', 'format': 'date-time'},
         'end': {'type': 'string', 'format': 'date-time'},
+        'zone': {'type': 'string'},
         'title': {'type': 'string'},
         'brief': {'type': 'string'},
         'description': {'type': 'string'},
@@ -37,6 +38,7 @@ UPDATE_HIKE_SCHEMA = {
         'name': {'type': 'string'},
         'start': {'type': 'string', 'format': 'date-time'},
         'end': {'type': 'string', 'format': 'date-time'},
+        'zone': {'type': 'string'},
         'title': {'type': 'string'},
         'brief': {'type': 'string'},
         'description': {'type': 'string'},
@@ -172,11 +174,13 @@ def one_hike(hike_id: int):
 def new_hike():
     ''' Create a new hike. '''
     strict_schema(NEW_HIKE_SCHEMA)
+
     def _conv(item: Tuple[str, Any]) -> Tuple[str, Any]:
         key, value = item
         if key in ('start', 'end'):
-            value = datetime.fromisoformat(value)
+            value = to_datetime(value, flask.g.data.get('zone'))
         return key, value
+
     with Session(engine) as session:
         data = dict(map(_conv, flask.g.data.items()))
         hike = Hike(**data)
@@ -215,7 +219,9 @@ def hike_update_one(hike_id: int):
             select(Hike)
             .where(Hike.id == hike_id)
         ).scalar_one()
-        for key, value in flask.request.json.items():
+        for key, value in flask.g.data.items():
+            if key in ('start', 'end'):
+                value = to_datetime(value, flask.g.data.get('zone'))
             setattr(ret, key, value)
         session.commit()
         return {'status': 'OK'}

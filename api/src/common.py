@@ -60,7 +60,7 @@ class _Cached:
 GLOBALS = _Cached()
 
 
-def to_datetime(value: Union[str, datetime]) -> datetime:
+def to_datetime(value: Union[str, datetime], zone: Optional[str] = None) -> datetime:
     '''
     Parse a timestamp to datetime or ensure timezone is set. Since the database is likely to drop
     the timestamp, we will assume naive timestamps are intended to be UTC.
@@ -70,11 +70,12 @@ def to_datetime(value: Union[str, datetime]) -> datetime:
     else:
         ret = datetime.fromisoformat(value)
     if ret.tzinfo is None or ret.tzinfo.utcoffset(ret) is None:
-        ret = ret.replace(tzinfo=pytz.utc)
+        zoneinfo = pytz.timezone(zone) if zone is not None else pytz.utc
+        ret = ret.replace(tzinfo=zoneinfo)
     return ret
 
 
-def picture_timestamp(img_data: bytes) -> Optional[datetime]:
+def picture_timestamp(img_data: bytes, allow_naive: bool = False) -> Optional[datetime]:
     img = PIL.Image.open(io.BytesIO(img_data))
     exifdata = img.getexif()
     for tag_id in exifdata:
@@ -85,7 +86,8 @@ def picture_timestamp(img_data: bytes) -> Optional[datetime]:
                 data = data.decode()
             if data:
                 data = EXIF_TIME_PAT.sub(r'\1-\2-\3', data)
-            return to_datetime(data) if data else None
+            return ((datetime.fromisoformat(data) if allow_naive else to_datetime(data))
+                    if data else None)
     return None
 
 

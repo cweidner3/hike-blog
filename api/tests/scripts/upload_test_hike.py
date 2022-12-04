@@ -10,7 +10,7 @@ import requests
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from src.db.models import Hike
+from src.db.models import Hike, ApiSession
 from tests.common import engine, get_logger, query_route
 
 LOG = get_logger()
@@ -30,16 +30,31 @@ HIKE = {
     'name': 'my-test-hike',
     'start': _ts_w_tz('2022-05-07 10:00:00', 'America/New_York'),
     'end': _ts_w_tz('2022-05-09 14:00:00', 'America/New_York'),
+    'zone': 'America/New_York',
+    'title': 'My Test Hike',
+    'brief': '3-day Hike Along North Chick Creek (Cumberland Trail)',
 }
 
 TRACKS = list(Path(HERE, 'hike_data').glob('*.gpx'))
 
 PICTURES = list(Path(HERE, 'hike_data').glob('*.jpg'))
 
+HEADERS = {}
 
 def _replace() -> bool:
     value = os.environ.get('REPLACE', '0')
     return int(value) > 0
+
+
+def _api_session_key() -> str:
+    with Session(engine) as session:
+        ret = session.execute(
+            select(ApiSession.key, ApiSession.admin)
+            .where(ApiSession.admin == True)
+            .limit(1)
+        ).all()
+        assert len(ret) > 0
+        return ret[0][0]
 
 
 def _hike_exists() -> Optional[int]:
@@ -67,6 +82,7 @@ def _create_new_hike() -> int:
         query_route('api', '/hikes/new'),
         json=HIKE,
         timeout=_TIMEOUT,
+        headers=HEADERS,
     )
     resp.raise_for_status()
     data = resp.json()
@@ -85,6 +101,7 @@ def _upload_tracks(hike_id: int):
                 query_route('api', f'/hikes/{hike_id}/data'),
                 files={file.name: inf},
                 timeout=_TIMEOUT,
+                headers=HEADERS,
             )
             resp.raise_for_status()
 
@@ -97,11 +114,13 @@ def _upload_pictures(hike_id: int):
                 query_route('api', f'/pictures/hike/{hike_id}'),
                 files={file.name: inf},
                 timeout=_TIMEOUT,
+                headers=HEADERS,
             )
             resp.raise_for_status()
 
 
 def _main():
+    HEADERS['Api-Session'] = _api_session_key()
     hike_id = None if _replace() else _hike_exists()
     if hike_id is None:
         if _replace():

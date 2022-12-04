@@ -11,6 +11,7 @@ import sqlalchemy
 import sqlalchemy.orm
 
 from src.db.base import Base
+from src.db.custom import AwareDateTime
 
 
 def _get_db_uri(env: Optional[Dict[str, str]] = None):
@@ -43,6 +44,8 @@ class JsonSerializer(flask.json.JSONEncoder):
                 return dict(it_)
             if isinstance(data, datetime):
                 return data.isoformat()
+            if isinstance(data, AwareDateTime):
+                return data.timestamp.isoformat() if data.timestamp is not None else None
             if isinstance(data, dict):
                 it_ = data.items()
                 it_ = map(lambda x: (x[0], _nested(x[1])), it_)
