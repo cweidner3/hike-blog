@@ -47,6 +47,23 @@ def get_secret(name: str, default: str = '') -> str:
 class _Cached:
     _LOGGER_NAME = 'api'
 
+    _LUT = {
+        'db': {
+            'dialect': 'DB_DIALECT',
+            'host': 'DB_HOST',
+            'port': 'DB_PORT',
+            'name': 'DB_NAME',
+            'user': 'DB_USER',
+            'pass': 'DB_PASS',
+            'passfile': 'DB_PASS_FILE',
+        },
+        'app': {
+            'mode': 'APP_MODE',
+            'secret': 'APP_SECRET',
+            'secretfile': 'APP_SECRET_FILE',
+        },
+    }
+
     def __init__(self) -> None:
         self._log_init = False
 
@@ -55,6 +72,32 @@ class _Cached:
         ''' Get a logger instance. '''
         log = flask.logging.create_logger(flask.current_app)
         return log
+
+    def get_env(self, section: str, key: str, default: Optional[str] = None) -> str:
+        if key.endswith('file') and self._LUT[section][key] not in os.environ:
+            key = key[:-4]
+        env_var = self._LUT[section][key]
+        ret = os.environ.get(env_var, default)
+        if ret is None and default is not None:
+            return default
+        elif ret is None:
+            raise ValueError(f'Unable to find {env_var} in environment')
+        if key.endswith('file'):
+            val = Path(ret).resolve().read_text(encoding='utf-8')
+            ret = val.splitlines()[0].split()[0]
+        return ret
+
+    def get_env_int(self, section: str, key: str, default: Optional[int] = None) -> int:
+        try:
+            ret = self.get_env(section, key)
+        except ValueError:
+            if default is None:
+                raise
+            return default
+        try:
+            return int(ret)
+        except ValueError:
+            raise ValueError(f'Unable to interpret {ret} as integer') from ValueError
 
 
 GLOBALS = _Cached()

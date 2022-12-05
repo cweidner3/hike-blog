@@ -1,5 +1,7 @@
+import configparser
 import json
 import logging
+from os import pipe
 from pathlib import Path
 import subprocess
 from typing import Optional
@@ -65,6 +67,34 @@ class _Cached:
             assert ip_addr != ''
         return ip_addr
 
+    def is_production_mode(self) -> bool:
+        ''' Detect if the app is in local-production mode or development. '''
+        ret = subprocess.run(
+            'docker-compose ps --format json'.split(),
+            check=True,
+            stdout=subprocess.PIPE,
+            cwd=Path(Path(__file__).parent, '../..').resolve(),
+        )
+        project = json.loads(ret.stdout.decode())
+        project = map(lambda x: x['Project'], project)
+        project = next(project)
+        service = 'api'
+        index = '1'
+        cont = '-'.join(filter(bool, [project, service, index]))
+        ret = subprocess.run(
+            f'docker inspect {cont}'.split(),
+            check=True,
+            stdout=subprocess.PIPE,
+            cwd=Path(Path(__file__).parent, '../..').resolve(),
+        )
+        data = json.loads(ret.stdout.decode())
+        envdata = data[0]['Config']['Env']
+        app_mode = next(filter(
+            lambda x: x[0] == 'APP_MODE', map(lambda x: x.split('='), envdata)
+        ))
+        return app_mode[1] == 'production'
+
+
     def get_logger(self) -> logging.Logger:
         log = logging.getLogger('tests')
         if self._log_init is False:
@@ -80,6 +110,11 @@ class _Cached:
 _CACHED = _Cached()
 
 
+def proxy_url() -> str:
+    ''' Get api origin string. '''
+    return _CACHED.get_published_port_addr('proxy', 80)
+
+
 def dev_url() -> str:
     ''' Get api origin string. '''
     return _CACHED.get_published_port_addr('api', 5000)
@@ -92,7 +127,7 @@ def get_db_base_url() -> str:
 
 def query_route(container: str, route: str, query: Optional[dict] = None) -> str:
     if container == 'api':
-        origin = dev_url()
+        origin = f'{proxy_url()}/api' if _CACHED.is_production_mode() else dev_url()
     elif container == 'db':
         origin = get_db_base_url()
     else:
@@ -106,15 +141,10 @@ def query_route(container: str, route: str, query: Optional[dict] = None) -> str
 
 
 def _create_engine():
-    db_url = get_db_base_url()
-    _env = {
-        'DB_DIALECT': 'postgres',
-        'DB_USER': 'postgres',
-        'DB_PASS': 'secret',
-        'DB_HOST': db_url,
-        'DB_NAME': 'db',
-    }
-    return create_engine(get_db_uri(_env))
+    conf = configparser.ConfigParser()
+    conf.read([Path(Path(__file__).parent, '../alembic.ini').resolve()])
+    uri = conf['alembic']['sqlalchemy.url']
+    return create_engine(uri)
 
 
 engine = _create_engine()

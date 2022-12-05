@@ -7,21 +7,28 @@ import traceback
 
 from flask import Flask
 import flask.logging
+from flask_cors import CORS
 from jsonschema import ValidationError
 import werkzeug.exceptions
-from flask_cors import CORS
+import werkzeug.middleware.proxy_fix
 
 from src.bp.hikes import bp_hikes
 from src.bp.pics import bp_pics
-from src.bp.tracks import bp_tracks
 from src.bp.time import bp_time
-from src.common import get_secret
+from src.bp.tracks import bp_tracks
+from src.common import GLOBALS, get_secret
 from src.db.core import JsonSerializer
 
 app = Flask(__name__)
+
+if GLOBALS.get_env('app', 'mode') == 'production':
+    app.wsgi_app = werkzeug.middleware.proxy_fix.ProxyFix(
+        app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1,
+    )
+
 app.debug = True
 app.json_encoder = JsonSerializer
-app.secret_key = get_secret('secret-key', 'my-definately-very-complex-secret')
+app.secret_key = GLOBALS.get_env('app', 'secretfile', 'my-definately-very-complex-secret')
 CORS(app)
 
 LOG = flask.logging.create_logger(app)

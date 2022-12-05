@@ -3,24 +3,24 @@ Database setup and engine provider.
 '''
 
 from datetime import datetime
-import os
 from typing import Dict, Optional
 
 import flask
 import sqlalchemy
 import sqlalchemy.orm
 
+from src.common import GLOBALS
 from src.db.base import Base
 from src.db.custom import AwareDateTime
 
 
 def _get_db_uri(env: Optional[Dict[str, str]] = None):
-    _env = os.environ if env is None else env
-    dialect = _env.get('DB_DIALECT', 'postgres')
-    uname = _env.get('DB_USER', '')
-    passwd = _env.get('DB_PASS', '')
-    host = _env.get('DB_HOST', '')
-    name = _env.get('DB_NAME', '')
+    # TODO Reimplement some sort of test controllable variables
+    dialect = GLOBALS.get_env('db', 'dialect', 'postgres')
+    uname = GLOBALS.get_env('db', 'user', '')
+    passwd = GLOBALS.get_env('db', 'passfile', '')
+    host = GLOBALS.get_env('db', 'host', '')
+    name = GLOBALS.get_env('db', 'name', '')
     creds = f'{uname}:{passwd}' if passwd else uname
     login = f'{creds}@' if creds else ''
     if dialect == 'mariadb':
@@ -57,4 +57,4 @@ class JsonSerializer(flask.json.JSONEncoder):
         return _nested(o)
 
 
-engine = sqlalchemy.create_engine(_get_db_uri(), echo=True)
+engine = sqlalchemy.create_engine(_get_db_uri(), echo=False)

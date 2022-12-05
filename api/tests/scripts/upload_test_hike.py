@@ -41,6 +41,7 @@ PICTURES = list(Path(HERE, 'hike_data').glob('*.jpg'))
 
 HEADERS = {}
 
+
 def _replace() -> bool:
     value = os.environ.get('REPLACE', '0')
     return int(value) > 0

@@ -15,14 +15,20 @@ def _merge_docs(docold: dict, docnew: dict) -> dict:
     def _merge(oldval: Any, newval: Any) -> Any:
         if isinstance(oldval, dict) and isinstance(newval, dict):
             for key, value in newval.items():
-                oldval.update({key: _merge(oldval.get(key), value)})
+                if value is None:
+                    oldval.pop(key)
+                else:
+                    oldval.update({key: _merge(oldval.get(key), value)})
             return oldval
         return newval
 
     assert isinstance(docold, dict) and isinstance(docnew, dict)
 
     for key, value in docnew.items():
-        docold.update({key: _merge(docold.get(key), value)})
+        if value is None:
+            docold.pop(key)
+        else:
+            docold.update({key: _merge(docold.get(key), value)})
     return docold
 
 

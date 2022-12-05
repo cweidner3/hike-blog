@@ -16,11 +16,11 @@ services:
       - 3000:3000/tcp
     volumes:
     - ./web/src:/app/src:ro
-    - /app/src/css
 
   api:
     build: ./api
     environment:
+      APP_MODE: development
       DB_DIALECT: postgres
       DB_HOST: db
       DB_NAME: db

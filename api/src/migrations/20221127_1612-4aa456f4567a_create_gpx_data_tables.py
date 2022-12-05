@@ -44,7 +44,7 @@ def upgrade() -> None:
         Column('parent', Integer, ForeignKey('hikes.id', ondelete='CASCADE'), nullable=False),
         Column('name', Text),
         Column('description', Text),
-        Column('time', AwareDateTime),
+        Column('time', DateTime),
         Column('latitude', Float),
         Column('longitude', Float),
         Column('elevation', Float),
