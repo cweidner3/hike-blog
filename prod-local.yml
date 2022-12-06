@@ -16,11 +16,11 @@ services:
         gid: "1000"
         mode: 0400
 
-  # web:
-  #   build:
-  #     context: ./web
-  #     dockerfile: Dockerfile.prod
-  #   volumes: null
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.prod
+    volumes: null
 
   db:
     environment:
