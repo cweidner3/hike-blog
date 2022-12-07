@@ -52,7 +52,7 @@ jobs:
         uses: docker/build-push-action@v3.2.0
         with:
           context: "{{defaultContext}}:web"
-          file: "{context}/Dockerfile.prod"
+          file: ./web/Dockerfile.prod
           push: true
           tags: ${{ steps.metaweb.outputs.tags }}
           labels: ${{ steps.metaweb.outputs.labels }}
@@ -61,7 +61,7 @@ jobs:
         uses: docker/build-push-action@v3.2.0
         with:
           context: "{{defaultContext}}:api"
-          file: "{context}/Dockerfile.prod"
+          file: ./api/Dockerfile.prod
           push: true
           tags: ${{ steps.metaapi.outputs.tags }}
           labels: ${{ steps.metaapi.outputs.labels }}
