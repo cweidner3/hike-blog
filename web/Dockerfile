@@ -18,5 +18,8 @@ COPY src ./src
 
 EXPOSE 3000
 
+COPY ./entrypoint.sh /entrypoint.sh
+
 # start app
+ENTRYPOINT ["bash", "/entrypoint.sh"]
 CMD ["npm", "start"]

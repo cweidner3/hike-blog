@@ -1,0 +1,42 @@
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.prod
+    environment:
+      APP_MODE: production
+      SCRIPT_NAME: /api
+      DB_PASS: null
+      DB_PASS_FILE: /run/secrets/db_secret
+    volumes: null
+    secrets:
+      - source: db_secret
+        target: db_secret
+        uid: "1000"
+        gid: "1000"
+        mode: 0400
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.prod
+    volumes: null
+
+  db:
+    environment:
+      POSTGRES_PASSWORD: null
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_secret
+    secrets:
+      - source: db_secret
+        target: db_secret
+        uid: "1000"
+        gid: "1000"
+        mode: 0400
+
+configs:
+  proxy_conf:
+    file: ./nginx/nginx-local-prod.conf
+
+secrets:
+  db_secret:
+    file: ./secrets/dbsecret.txt

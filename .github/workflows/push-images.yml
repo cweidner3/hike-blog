@@ -1,0 +1,66 @@
+name: Build and Publish Docker Images CI
+
+on:
+  push:
+    branches:
+      - $default-branch
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - $default-branch
+
+jobs:
+
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_KEY }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: metaweb
+        uses: docker/metadata-action@v4.1.1
+        with:
+          images: ${{ secrets.DOCKER_HUB_NS }}/hikeblog-web
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: metaapi
+        uses: docker/metadata-action@v4.1.1
+        with:
+          images: ${{ secrets.DOCKER_HUB_NS }}/hikeblog-api
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Web Docker image
+        uses: docker/build-push-action@v3.2.0
+        with:
+          context: web
+          file: ./web/Dockerfile.prod
+          push: true
+          tags: ${{ steps.metaweb.outputs.tags }}
+          labels: ${{ steps.metaweb.outputs.labels }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3.2.0
+        with:
+          context: api
+          file: ./api/Dockerfile.prod
+          push: true
+          tags: ${{ steps.metaapi.outputs.tags }}
+          labels: ${{ steps.metaapi.outputs.labels }}

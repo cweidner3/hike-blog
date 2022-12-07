@@ -1,0 +1,26 @@
+# FROM --platform=$BUILDPLATFORM python:3.11
+FROM python:3.11
+
+RUN apt update -y && apt install -y \
+    gcc openssl \
+    mariadb-common libmariadb3 libmariadb-dev \
+    libpq5 libpq-dev postgresql-common
+
+RUN python -m venv /venv
+
+RUN groupadd -g 1000 worker \
+    && useradd -u 1000 -g 1000 worker \
+    && mkdir -p /app \
+    && chown 1000:1000 /app
+
+COPY requirements.txt /requirements.txt
+RUN /venv/bin/pip install -r /requirements.txt gunicorn
+
+USER worker
+WORKDIR /app
+
+COPY ./src ./src
+
+EXPOSE 5000
+
+CMD ["/venv/bin/python", "-m", "gunicorn", "-b", "0.0.0.0:5000", "src.main:app"]
