@@ -1,0 +1,21 @@
+name: Build Docker Images CI
+
+on:
+  push:
+    branches: [ $default-branch, ci ]
+  pull_request:
+    branches: [ $default-branch ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build the Web image
+      run: docker build . --file Dockerfile --tag hikeblog-web:0.0.1-$(date +%s)
+
+    - name: Build the Api image
+      run: docker build . --file Dockerfile --tag hikeblog-api:0.0.1-$(date +%s)
