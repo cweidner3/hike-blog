@@ -15,7 +15,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Build the Web image
-      run: docker build . --file Dockerfile --tag hikeblog-web:0.0.1-$(date +%s)
+      run: docker build web --file web/Dockerfile.prod --tag hikeblog-web:0.0.1-$(date +%s)
 
     - name: Build the Api image
-      run: docker build . --file Dockerfile --tag hikeblog-api:0.0.1-$(date +%s)
+      run: docker build api --file api/Dockerfile.prod --tag hikeblog-api:0.0.1-$(date +%s)
