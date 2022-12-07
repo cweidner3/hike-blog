@@ -2,9 +2,9 @@ name: Build Docker Images CI
 
 on:
   push:
-    branches: [ $default-branch, ci ]
-  pull_request:
-    branches: [ $default-branch ]
+    branches:
+      - 'feature/**'
+      - ci
 
 jobs:
 
@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Build the Web image
-      run: docker build web --file web/Dockerfile.prod --tag hikeblog-web:0.0.1-$(date +%s)
+      - name: Build the Web image
+        run: docker build web --file web/Dockerfile.prod --tag hikeblog-web:$(date +%s)
 
-    - name: Build the Api image
-      run: docker build api --file api/Dockerfile.prod --tag hikeblog-api:0.0.1-$(date +%s)
+      - name: Build the Api image
+        run: docker build api --file api/Dockerfile.prod --tag hikeblog-api:$(date +%s)
