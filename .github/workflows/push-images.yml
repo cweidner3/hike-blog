@@ -27,13 +27,13 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: metaweb
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        uses: docker/metadata-action@v4.1.1
         with:
           images: ${{ secrets.DOCKER_HUB_NS }}/hikeblog-web
 
       - name: Extract metadata (tags, labels) for Docker
         id: metaapi
-        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        uses: docker/metadata-action@v4.1.1
         with:
           images: ${{ secrets.DOCKER_HUB_NS }}/hikeblog-api
           tags: |
@@ -43,19 +43,19 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push Web Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        uses: docker/build-push-action@v3.2.0
         with:
-          context: web
-          file: Dockerfile.prod
+          context: "{{defaultContext}}:web"
+          file: "{context}/Dockerfile.prod"
           push: true
           tags: ${{ steps.metaweb.outputs.tags }}
           labels: ${{ steps.metaweb.outputs.labels }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        uses: docker/build-push-action@v3.2.0
         with:
-          context: api
-          file: Dockerfile.prod
+          context: "{{defaultContext}}:api"
+          file: "{context}/Dockerfile.prod"
           push: true
           tags: ${{ steps.metaapi.outputs.tags }}
           labels: ${{ steps.metaapi.outputs.labels }}
