@@ -1,0 +1,15 @@
+flask
+sqlalchemy
+alembic
+psycopg2
+pymysql
+bcrypt
+flask-expects-json
+webcolors
+rfc3339-validator
+isoduration
+rfc3986-validator
+requests
+pytz
+Pillow
+flask-cors
