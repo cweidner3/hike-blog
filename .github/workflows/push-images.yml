@@ -51,7 +51,7 @@ jobs:
       - name: Build and push Web Docker image
         uses: docker/build-push-action@v3.2.0
         with:
-          context: "{{defaultContext}}:web"
+          context: web
           file: ./web/Dockerfile.prod
           push: true
           tags: ${{ steps.metaweb.outputs.tags }}
@@ -60,7 +60,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v3.2.0
         with:
-          context: "{{defaultContext}}:api"
+          context: api
           file: ./api/Dockerfile.prod
           push: true
           tags: ${{ steps.metaapi.outputs.tags }}
