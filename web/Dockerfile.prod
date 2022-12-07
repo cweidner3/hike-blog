@@ -1,4 +1,5 @@
-FROM --platform=$BUILDPLATFORM node:18.2.0 as build
+# FROM --platform=$BUILDPLATFORM node:18.2.0 as build
+FROM node:18.2.0 as build
 
 WORKDIR /build
 COPY package.json ./
