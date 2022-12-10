@@ -6,7 +6,7 @@ Create Date: 2022-12-03 21:20:08.722869
 
 """
 from alembic import op
-from sqlalchemy import Boolean, Column, Integer, Text
+from sqlalchemy import Boolean, Column, Integer, Text, String
 import uuid
 
 
@@ -21,7 +21,7 @@ def upgrade() -> None:
     table = op.create_table(
         'session',
         Column('id', Integer, primary_key=True),
-        Column('key', Text, unique=True, nullable=False),
+        Column('key', String(256), unique=True, nullable=False),
         Column('username', Text, nullable=False),
         Column('displayname', Text, nullable=False),
         Column('admin', Boolean, default=False),

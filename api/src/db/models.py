@@ -1,7 +1,7 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=too-few-public-methods
 
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, LargeBinary, Text
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, LargeBinary, String, Text
 from sqlalchemy.orm import relationship
 
 from src.db.base import Base
@@ -11,7 +11,7 @@ from src.db.custom import AwareDateTime
 class Timezone(Base):
     __tablename__ = 'timezones'
 
-    name = Column(Text, primary_key=True, index=True)
+    name = Column(String(256), primary_key=True, index=True)
 
 
 class Hike(Base):
@@ -21,7 +21,7 @@ class Hike(Base):
     name = Column(Text, nullable=False)
     start = Column(AwareDateTime)
     end = Column(AwareDateTime)
-    zone = Column(Text, ForeignKey(Timezone.name), nullable=False, server_default='UTC')
+    zone = Column(Text, ForeignKey(Timezone.name), nullable=True, server_default='UTC')
     title = Column(Text)
     brief = Column(Text)
     description = Column(Text)
@@ -128,7 +128,7 @@ class Picture(Base):
     name = Column(Text, nullable=False)
     fmt = Column(Text, nullable=False)
     time = Column(AwareDateTime, nullable=False)
-    data = Column(LargeBinary, nullable=False)
+    data = Column(LargeBinary(1 << 24), nullable=False)
     description = Column(Text)
 
     @property
@@ -149,7 +149,7 @@ class ApiSession(Base):
     __tablename__ = 'session'
 
     id = Column(Integer, primary_key=True)
-    key = Column(Text, unique=True, nullable=False)
+    key = Column(String(256), unique=True, nullable=False)
     username = Column(Text, nullable=False)
     displayname = Column(Text, nullable=False)
     admin = Column(Boolean, default=False)
