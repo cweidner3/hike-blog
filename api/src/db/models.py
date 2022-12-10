@@ -128,7 +128,7 @@ class Picture(Base):
     name = Column(Text, nullable=False)
     fmt = Column(Text, nullable=False)
     time = Column(AwareDateTime, nullable=False)
-    data = Column(LargeBinary, nullable=False)
+    data = Column(LargeBinary(1 << 24), nullable=False)
     description = Column(Text)
 
     @property
