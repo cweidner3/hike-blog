@@ -35,6 +35,11 @@ jobs:
         uses: docker/metadata-action@v4.1.1
         with:
           images: ${{ secrets.DOCKER_HUB_NS }}/hikeblog-web
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
 
       - name: Extract metadata (tags, labels) for Docker
         id: metaapi
