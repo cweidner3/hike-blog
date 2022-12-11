@@ -173,6 +173,7 @@ def get_hike_waypoints(hike_id: int):
         wpts = session.execute(
             select(Waypoint)
             .where(Waypoint.parent == hike_id)
+            .order_by(Waypoint.time)
         ).scalars()
         wpts = list(map(lambda x: x.json, map(flask.jsonify, wpts)))
         return {'data': wpts}

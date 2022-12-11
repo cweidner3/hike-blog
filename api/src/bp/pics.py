@@ -95,6 +95,7 @@ def get_pics_for_hike(hike_id: int):
         pics = session.execute(
             select(Picture)
             .where(Picture.parent == hike_id)
+            .order_by(Picture.time)
         ).scalars()
         pics = list(map(lambda x: x.json, map(flask.jsonify, pics)))
         return {"data": pics}

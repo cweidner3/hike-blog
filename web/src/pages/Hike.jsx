@@ -89,14 +89,15 @@ function PicturePopup(props = {}) {
         selectedPicture = {properties: {}, geometry: {}},
     } = props;
 
-    const name = selectedPicture.properties.name;
     const picId = selectedPicture.properties.picId;
     const fmt = selectedPicture.properties.fmt;
     const time = toDateStr(selectedPicture.properties.time);
     const description = selectedPicture.properties.description;
 
     const img = (
-        <img src={`/api/pictures/${picId}.${fmt}`}/>
+        <figure className="image">
+            <img src={`/api/pictures/${picId}.${fmt}`}/>
+        </figure>
     );
 
     return (
@@ -164,47 +165,41 @@ function InteractiveZone(props = {}) {
     const prevWp = (wpId === 0) ? null : sourceList[wpId - 1];
     const nextWp = (wpId >= (sourceList.length - 1)) ? null : sourceList[wpId + 1];
 
-    const buttonClasses = "tile is-child notification has-background-grey-lighter m-2";
-    const buttonSyle = {
-        height: '100%',
-    }
+    const comColor = 'has-background-grey-lighter';
 
-    const leftButton = (prevWp == null) ? null : (
-        <div
-            className={`${buttonClasses} is-1`}
-            onClick={() => setter([type, prevWp])}
-        >
-            <FontAwesomeIcon icon={faChevronLeft}/>
-        </div>
-    );
-    const closeButton = (
-        <div className={`${buttonClasses}`} onClick={() => setter(['', null])}>
-            X
-        </div>
-    );
-    const rightButton = (nextWp == null) ? (<div className="tile is-child notification"></div>) : (
-        <div
-            className={buttonClasses}
-            onClick={() => setter([type, nextWp])}
-        >
-            <FontAwesomeIcon icon={faChevronRight}/>
+    const pageSel = (
+        <div className="pagination is-left">
+            <div
+                className={`pagination-previous ${comColor} ${prevWp == null ? 'is-disabled' : ''}`}
+                onClick={() => (prevWp != null) ? setter([type, prevWp]) : null}
+            >
+                Previous
+            </div>
+            <div
+                className={`pagination-next ${comColor} ${nextWp == null ? 'is-disabled' : ''}`}
+                onClick={() => (nextWp != null) ? setter([type, nextWp]) : null}
+            >
+                Next
+            </div>
+            <div
+                className={`pagination-next delete is-large ${comColor}`}
+                onClick={() => setter(['', null])}
+            />
         </div>
     );
 
     return (
         <div className="content has-background-primary p-2">
-            <div className="card has-background-white-ter">
+            <div className="card has-background-dark">
                 <div className="card-content">
                     <div className="content">
                         <div className="tile is-ancestor">
-                            <div className="tile is-parent">
-                                {leftButton}
+                            <div className="tile is-parent is-vertical">
+                                <div className="tile is-child">
+                                    {pageSel}
+                                </div>
                                 <div className="tile notification is-child has-background-grey-lighter">
                                     {comp}
-                                </div>
-                                <div className="tile is-parent is-vertical is-1">
-                                    {closeButton}
-                                    {rightButton}
                                 </div>
                             </div>
                         </div>
@@ -243,7 +238,7 @@ function MapContainer(props = {}) {
     const [selected, setSelected] = useState(['', null]);
     const [clusterClicked, setClusterClicked] = useState(null);
 
-    const mapStyle = { height: '400px'};
+    const mapStyle = { height: '60vh' };
 
     useEffect(() => {
         const waypointsGJ = waypoints.map((x, xi) => ({
