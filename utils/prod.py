@@ -121,19 +121,63 @@ def _action_create(args_):
         'title': args.title,
         'brief': args.brief,
         'description': args.description,
-        'start': args.start,
-        'end': args.end,
-        'timezone': args.timezone,
+        'start': args.start.isoformat() if args.start else args.start,
+        'end': args.end.isoformat() if args.end else args.end,
+        'zone': args.timezone,
     }
     headers = {
         'Api-Session': api_key,
     }
 
+    data = data.items()
+    data = filter(lambda x: x[1] is not None, data)
+    data = dict(data)
+
     resp = requests.post(url, json=data, headers=headers, timeout=10)
     resp.raise_for_status()
 
-    print(' Hike: {resp.json()["id"]}')
-    print('OK')
+    print(' Hike: {json.dumps(resp.json(), indent=2)}')
+
+
+def _action_update(args_):
+    ''' Update hike info. '''
+    parser = argparse.ArgumentParser()
+    parser.add_argument('hikeid', type=int)
+    parser.add_argument('--name')
+    parser.add_argument('--title')
+    parser.add_argument('--brief')
+    parser.add_argument('--description')
+    parser.add_argument('--start', type=_time_type)
+    parser.add_argument('--end', type=_time_type)
+    parser.add_argument('--timezone', type=_tz_type)
+    args = parser.parse_args(args_.others)
+
+
+    base_url = CONFIG.get('url', section='app')
+    api_key = CONFIG.get('api-key', section='app')
+    url = f'{base_url}/api/hikes/{args.hikeid}'
+
+    data = {
+        'name': args.name,
+        'title': args.title,
+        'brief': args.brief,
+        'description': args.description,
+        'start': args.start.isoformat() if args.start else args.start,
+        'end': args.end.isoformat() if args.end else args.end,
+        'zone': args.timezone,
+    }
+    headers = {
+        'Api-Session': api_key,
+    }
+
+    data = data.items()
+    data = filter(lambda x: x[1] is not None, data)
+    data = dict(data)
+
+    resp = requests.post(url, json=data, headers=headers, timeout=10)
+    resp.raise_for_status()
+
+    print(' Hike: {json.dumps(resp.json(), indent=2)}')
 
 
 def _action_upload(args_):
@@ -170,11 +214,14 @@ def _action_upload(args_):
             resp.raise_for_status()
 
 
+####################################################################################################
+
 def _main():
     actions = {
         'migrate': _action_migrate,
         'list': _action_list,
         'create': _action_create,
+        'update': _action_update,
         'upload': _action_upload,
     }
 
