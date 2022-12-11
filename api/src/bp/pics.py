@@ -78,6 +78,27 @@ def get_pic(pic_id: int):
         raise ValueError(f'Unhandled request method type "{flask.request.method}"')
 
 
+@bp_pics.get('/<int:pic_id>.<fmt>')
+def get_pic_data(pic_id: int, fmt: str):
+    ''' Return list of tracks. '''
+    with Session(engine) as session:
+        pic = session.execute(
+            select(Picture.data)
+            .where(Picture.id == pic_id)
+        ).one()
+        return pic[0]
+
+@bp_pics.get('/hike/<int:hike_id>')
+def get_pics_for_hike(hike_id: int):
+    ''' Get info on the pictures related to a hike. '''
+    with Session(engine) as session:
+        pics = session.execute(
+            select(Picture)
+            .where(Picture.parent == hike_id)
+        ).scalars()
+        pics = list(map(lambda x: x.json, map(flask.jsonify, pics)))
+        return {"data": pics}
+
 ####################################################################################################
 # Restricted Routes
 

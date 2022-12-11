@@ -30,6 +30,9 @@ const {
 
 mapboxgl.accessToken = MAPBOXGL_ACCESS_TOKEN;
 
+let gHikeTimezone = 'UTC';
+let gHikeId = null;
+
 async function queryHike(hikeId, { includeTrack=false } = {}) {
     const query = { includeTrack };
     return apiCall(`/hikes/${hikeId}`, 'GET', { json: true, query });
@@ -41,6 +44,10 @@ async function queryTracks(hikeId) {
 
 async function queryWaypoints(hikeId) {
     return apiCall(`/hikes/${hikeId}/waypoints`, 'GET', { json: true });
+}
+
+async function queryPictures(hikeId) {
+    return apiCall(`/pictures/hike/${hikeId}`, 'GET', { json: true });
 }
 
 function mapStyleUrl(name) {
@@ -56,6 +63,11 @@ function mapStyleUrl(name) {
   return 'mapbox://styles/mapbox/outdoors-v11';
 }
 
+function toDateStr(timestr) {
+    const obj = new Date(timestr);
+    return obj.toLocaleString('en-US', { timeZone: gHikeTimezone || 'America/New_York' });
+};
+
 function newPictureGJ(pictureMeta) {
     const ret = {
         type: 'Feature',
@@ -69,6 +81,31 @@ function newPictureGJ(pictureMeta) {
         return ret;
     }
     return ret;
+}
+
+
+function PicturePopup(props = {}) {
+    const {
+        selectedPicture = {properties: {}, geometry: {}},
+    } = props;
+
+    const name = selectedPicture.properties.name;
+    const picId = selectedPicture.properties.picId;
+    const fmt = selectedPicture.properties.fmt;
+    const time = toDateStr(selectedPicture.properties.time);
+    const description = selectedPicture.properties.description;
+
+    const img = (
+        <img src={`/api/pictures/${picId}.${fmt}`}/>
+    );
+
+    return (
+        <div className="content">
+            <p className="has-text-weight-bold">{time}</p>
+            <p>{description}</p>
+            {img}
+        </div>
+    );
 }
 
 
@@ -115,6 +152,13 @@ function InteractiveZone(props = {}) {
             />
         );
     }
+    else if (type === 'picture') {
+        comp = (
+            <PicturePopup
+                selectedPicture={selected}
+            />
+        );
+    }
 
     const wpId = selected.properties.id;
     const prevWp = (wpId === 0) ? null : sourceList[wpId - 1];
@@ -127,7 +171,7 @@ function InteractiveZone(props = {}) {
 
     const leftButton = (prevWp == null) ? null : (
         <div
-            className={`${buttonClasses}`}
+            className={`${buttonClasses} is-1`}
             onClick={() => setter([type, prevWp])}
         >
             <FontAwesomeIcon icon={faChevronLeft}/>
@@ -175,6 +219,7 @@ function MapContainer(props = {}) {
     const {
         tracks = [],
         waypoints = [],
+        pictures = [],
         startingCoords = [ATLANTA_COORDS[1], ATLANTA_COORDS[0]],
         startingZoom = ATLANTA_COORDS[2],
     } = props;
@@ -193,6 +238,7 @@ function MapContainer(props = {}) {
     const [tracksGJ, setTracksGJ] = useState([]);
     const [pictureGJ, setPictureGJ] = useState(newPictureGJ());
     const [selectedWaypoint, setSelectedWaypoint] = useState(null);
+    const [selectedPicture, setSelectedPicture] = useState(null);
     const [popup, setPopup] = useState(null);
     const [selected, setSelected] = useState(['', null]);
     const [clusterClicked, setClusterClicked] = useState(null);
@@ -232,6 +278,44 @@ function MapContainer(props = {}) {
         }));
         setTracksGJ(tracksGJ);
     }, [tracks]);
+
+    useEffect(() => {
+        if (tracks.length === 0) {
+            if (pictureGJ !== 0) {
+                setPictureGJ([]);
+            }
+            return;
+        }
+
+        const trackData = tracks.map((t) => (
+            t.segments
+        )).flat(2).map((x) => (
+            {...x, time: new Date(x.time)}
+        ));
+        console.debug('Tracks data', trackData);
+
+        const picGJ = pictures.map((p, pi) => {
+            const pictime = new Date(p.time);
+            let found = trackData.find((d) => d.time > pictime);
+            found = found ?? trackData[trackData.length - 1];
+            return {
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: [found.longitude, found.latitude],
+                },
+                properties: {
+                    ...p,
+                    id: pi,
+                    picId: p.id,
+                    iconSize: ICON_SIZES.waypoint * (
+                        (selectedPicture?.properties?.id == pi) ? 2 : 1
+                    ),
+                },
+            };
+        });
+        setPictureGJ(picGJ)
+    }, [pictures, tracks.length, selectedPicture?.properties?.id]);
 
     useEffect(() => {
         if (mapRef.current) {
@@ -281,6 +365,19 @@ function MapContainer(props = {}) {
                 })
             });
 
+            mapRef.current.on('click', 'picture', (e) => {
+                console.debug('Picture clicked', JSON.parse(JSON.stringify(e.features)));
+                setSelected(['picture', e.features[0]]);
+            });
+
+            mapRef.current.on('click', 'picture-clustered', (e) => {
+                console.debug('Picture (clustered) clicked', JSON.parse(JSON.stringify(e.features)));
+                mapRef.current.flyTo({
+                    center: e.features[0].geometry.coordinates,
+                    zoom: 14.5,
+                })
+            });
+
             console.debug('Done')
 
             setLoaded2(true);
@@ -309,6 +406,16 @@ function MapContainer(props = {}) {
 
     useEffect(() => {
         if (!loaded2) {
+            return
+        }
+        mapRef.current.getSource('picture').setData({
+            type: 'FeatureCollection',
+            features: pictureGJ,
+        })
+    }, [pictureGJ, loaded2]);
+
+    useEffect(() => {
+        if (!loaded2) {
             return;
         }
 
@@ -326,6 +433,7 @@ function MapContainer(props = {}) {
         }
         const setters = {
             'waypoint': setSelectedWaypoint,
+            'picture': setSelectedPicture,
         }
         if (selected[1] == null) {
             Object.values(setters).forEach((s) => {
@@ -361,7 +469,11 @@ function MapContainer(props = {}) {
                 type={selected[0]}
                 selected={selected[1]}
                 setter={setSelected}
-                sourceList={(selected[0] === 'waypoint') ? waypointsGJ : []}
+                sourceList={
+                    (selected[0] === 'waypoint') ? waypointsGJ
+                        : (selected[0] === 'picture') ? pictureGJ
+                        : []
+                }
             />
         </div>
     );
@@ -373,6 +485,7 @@ function Hike(props = {}) {
     const [hike, setHike] = useState(null);
     const [tracks, setTracks] = useState([]);
     const [waypoints, setWaypoints] = useState([]);
+    const [pictures, setPictures] = useState([]);
     const [timeString, setTimeString] = useState('');
 
     console.debug('Props', props.router);
@@ -385,13 +498,19 @@ function Hike(props = {}) {
     useEffect(() => {
         queryHike(params.hikeId).then((ret) => {
             setHike(ret);
+            if (!!ret.zone) {
+                gHikeTimezone = ret.zone;
+            }
         }).catch((err) => console.error('Failed to get hike info:', err));
         queryTracks(params.hikeId).then((ret) => {
             setTracks(ret.data);
         }).catch((err) => console.error('Failed to get hike track info:', err));
         queryWaypoints(params.hikeId).then((ret) => {
             setWaypoints(ret.data);
-        }).catch((err) => console.error('Failed to get hike track info:', err));
+        }).catch((err) => console.error('Failed to get hike waypoint info:', err));
+        queryPictures(params.hikeId).then((ret) => {
+            setPictures(ret.data);
+        }).catch((err) => console.error('Failed to get hike pictures info:', err));
     }, [])
 
     useEffect(() => {
@@ -431,6 +550,7 @@ function Hike(props = {}) {
                     hike={hike}
                     tracks={tracks}
                     waypoints={waypoints}
+                    pictures={pictures}
                     startingCoords={(
                         ['longitude', 'latitude'].every((x) => !!hike && !!hike[x])
                         ? [hike?.longitude, hike?.latitude]
