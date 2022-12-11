@@ -21,10 +21,13 @@ services:
     build: ./api
     environment:
       APP_MODE: development
-      DB_DIALECT: postgres
-      DB_HOST: db
+      # DB_DIALECT: postgres
+      DB_DIALECT: mariadb
+      # DB_HOST: db
+      DB_HOST: mariadb
       DB_NAME: db
-      DB_USER: postgres
+      # DB_USER: postgres
+      DB_USER: user
       DB_PASS: secret
     volumes:
     - ./api/src:/app/src:ro
