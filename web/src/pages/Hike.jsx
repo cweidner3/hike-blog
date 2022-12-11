@@ -35,6 +35,14 @@ async function queryHike(hikeId, { includeTrack=false } = {}) {
     return apiCall(`/hikes/${hikeId}`, 'GET', { json: true, query });
 }
 
+async function queryTracks(hikeId) {
+    return apiCall(`/tracks/hike/${hikeId}`, 'GET', { json: true });
+}
+
+async function queryWaypoints(hikeId) {
+    return apiCall(`/hikes/${hikeId}/waypoints`, 'GET', { json: true });
+}
+
 function mapStyleUrl(name) {
   if (name === 'outdoors') {
     return 'mapbox://styles/mapbox/outdoors-v11';
@@ -214,10 +222,12 @@ function MapContainer(props = {}) {
             type: 'Feature',
             geometry: {
                 type: 'LineString',
-                coordinates: t.map((s) => s.map((p) => ([p.longitude, p.latitude]))).flat(1),
+                coordinates: t.segments.map((s) => s.map((p) => ([p.longitude, p.latitude]))).flat(1),
             },
             properties: {
                 color: TRACK_COLORS[ti % TRACK_COLORS.length],
+                name: t.name,
+                description: t.description,
             },
         }));
         setTracksGJ(tracksGJ);
@@ -367,13 +377,15 @@ function Hike(props = {}) {
     console.debug('Props', props.router);
 
     useEffect(() => {
-        queryHike(params.hikeId, {includeTrack: true}).then((ret) => {
-            setTracks(ret.tracks);
-            setWaypoints(ret.waypoints);
-            delete ret.tracks;
-            delete ret.waypoints;
+        queryHike(params.hikeId).then((ret) => {
             setHike(ret);
-        })
+        }).catch((err) => console.error('Failed to get hike info:', err));
+        queryTracks(params.hikeId).then((ret) => {
+            setTracks(ret.data);
+        }).catch((err) => console.error('Failed to get hike track info:', err));
+        queryWaypoints(params.hikeId).then((ret) => {
+            setWaypoints(ret.data);
+        }).catch((err) => console.error('Failed to get hike track info:', err));
     }, [])
 
     return (
