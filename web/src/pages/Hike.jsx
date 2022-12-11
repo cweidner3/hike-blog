@@ -373,8 +373,14 @@ function Hike(props = {}) {
     const [hike, setHike] = useState(null);
     const [tracks, setTracks] = useState([]);
     const [waypoints, setWaypoints] = useState([]);
+    const [timeString, setTimeString] = useState('');
 
     console.debug('Props', props.router);
+
+    const toDateStr = (d) => {
+        const obj = new Date(d);
+        return obj.toLocaleString('en-US', { timeZone: hike?.timeZone || 'America/New_York' });
+    };
 
     useEffect(() => {
         queryHike(params.hikeId).then((ret) => {
@@ -388,12 +394,26 @@ function Hike(props = {}) {
         }).catch((err) => console.error('Failed to get hike track info:', err));
     }, [])
 
+    useEffect(() => {
+        const startTime = (hike?.start) ? toDateStr(hike.start) : null;
+        const endTime = (hike?.end) ? toDateStr(hike.end) : null;
+        const timeString = (
+            (!!startTime && !!endTime)
+            ? `${startTime} - ${endTime}`
+            : (!!startTime)
+            ? startTime
+            : endTime
+        );
+        setTimeString(timeString);
+    }, [hike?.id]);
+
+
     return (
         <div className="container">
             <div className="has-text-centered">
                 <h1 className="title">{(hike == null) ? '...' : hike.title ?? hike.name}</h1>
                 <h2 className="title is-5">{hike?.brief}</h2>
-                <p><i>({hike?.start} - {hike?.end})</i></p>
+                <p><i>({timeString})</i></p>
             </div>
 
             <div className="block"></div>
