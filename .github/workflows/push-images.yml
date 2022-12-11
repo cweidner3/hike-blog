@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - $default-branch
+      - default
+      - 'docker/*'
     tags:
       - 'v*'
   pull_request:

@@ -1,6 +1,19 @@
 .PHONY: default
 default: up
 
+.PHONY: help
+help:
+	@echo "ACTIONS"
+	@echo "    up         Bring up the docker env."
+	@echo "    down       Bring down the docker env."
+	@echo "    build      Build images associated with the services."
+	@echo "    logs       View service logs."
+	@echo "    stat[us]   List the status of the docker services."
+	@echo "    localup    Bring up the local production env."
+	@echo "    localdown  Bring down the local production env."
+	@echo "    locallogs  View local production logs."
+	@echo "    clean      Clean up generated files."
+
 .PHONY: up
 up:
 	docker-compose up --build -d
