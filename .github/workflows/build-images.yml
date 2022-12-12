@@ -32,8 +32,8 @@ jobs:
         with:
           images: ${{ secrets.DOCKER_HUB_NS }}/hikeblog-web
           tags: |
-            type=sha,event=branch,prefix={{branch}-
-            type=sha,event=pr,prefix={{branch}-
+            type=sha,event=branch,prefix={{branch}}-
+            type=sha,event=pr,prefix={{branch}}-
 
       - name: Extract metadata (tags, labels) for Docker
         id: metaapi
@@ -41,8 +41,8 @@ jobs:
         with:
           images: ${{ secrets.DOCKER_HUB_NS }}/hikeblog-api
           tags: |
-            type=sha,event=branch,prefix={{branch}-
-            type=sha,event=pr,prefix={{branch}-
+            type=sha,event=branch,prefix={{branch}}-
+            type=sha,event=pr,prefix={{branch}}-
 
       - name: Build and push Web Docker image
         uses: docker/build-push-action@v3.2.0
