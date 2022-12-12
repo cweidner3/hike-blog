@@ -33,6 +33,23 @@ HIKE = {
     'zone': 'America/New_York',
     'title': 'My Test Hike',
     'brief': '3-day Hike Along North Chick Creek (Cumberland Trail)',
+    'description': '''\
+This hike was **awesome**!!!
+
+### Day 1
+
+We started our hike on the trail after checking in with some rangers who were doing their rounds and
+we topped off our bottles with filtered water from the creek.
+
+### Day 2
+
+We considered continuing on the trail, but ended up coming to the conclusion that we wanted to make
+day 2 to be a _chill_ day.
+
+### Day 3
+
+We made our way back to the car and encountered many ticks along the way...
+'''
 }
 
 TRACKS = list(Path(HERE, 'hike_data').glob('*.gpx'))
