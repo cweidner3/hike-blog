@@ -1,23 +1,57 @@
 import { useEffect, useState } from 'react';
 
-import { redirect } from 'react-router-dom';
-
-
 import { apiCall } from '../util/fetch';
 
 async function queryHikes() {
     const resp = apiCall('/hikes/', 'GET', { json: true });
     return resp;
 }
-function HikesBrowser(props = {}) {
 
-    const [hikes, setHikes] = useState([]);
+function toDateStr(value, tz) {
+    if (value == null) {
+        return value;
+    }
+    const obj = new Date(value);
+    return obj.toLocaleString('en-US', { timeZone: tz })
+}
 
 
-    const onItemClick = (h) => {
-        console.debug('Item click', h.id);
-        window.location.pathname = `/hike/${h.id}`;
+function HikeItem(props = {}) {
+    const {
+        key = `${Date.now()}`,
+        hike = null,
+    } = props;
+
+    const onClick = () => {
+        window.location.pathname = `/hike/${hike.id}`;
     };
+
+    return (
+        <tr key={key} className='is-hoverable'>
+            <td onClick={() => onClick()}>
+                <div className='level'>
+                    <div className='level-left'>
+                        <p className='has-text-weight-bold level-item'>
+                            {hike?.title ?? hike.name}
+                        </p>
+                    </div>
+                    <div className='level-right'>
+                        <p className='level-item is-italic'>
+                            {toDateStr(hike?.start) ?? toDateStr(hike?.end)}
+                        </p>
+                    </div>
+                </div>
+                <div className='is-italic'>
+                    {hike?.brief}
+                </div>
+            </td>
+        </tr>
+    )
+}
+
+
+function HikesBrowser(props = {}) {
+    const [hikes, setHikes] = useState([]);
 
     useEffect(() => {
         queryHikes().then((resp) => {
@@ -26,11 +60,7 @@ function HikesBrowser(props = {}) {
     }, [])
 
     const tbody = (hikes).map((h, i) => (
-        <tr key={`hike-item-${i}`}>
-            <td onClick={() => onItemClick(h)}>
-                <p className='has-text-weight-bold'>{h.name}</p>
-            </td>
-        </tr>
+        <HikeItem key={`hike-item-${i}`} hike={h} />
     ))
 
     return (
