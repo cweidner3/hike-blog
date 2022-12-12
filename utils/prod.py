@@ -216,18 +216,20 @@ def _action_upload(args_):
 
 def _action_process(args_):
     parser = argparse.ArgumentParser()
+    parser.add_argument('--limit', type=int, default=5)
+    parser.add_argument('--timeout', type=int, default=30)
     args = parser.parse_args(args_.others)
 
     base_url = CONFIG.get('url', section='app')
     api_key = CONFIG.get('api-key', section='app')
     headers = {'Api-Session': api_key}
 
-    url = f'{base_url}/pictures/process?limit=5'
+    url = f'{base_url}/api/pictures/process?limit={args.limit}'
 
     resp = requests.post(
         url,
         headers=headers,
-        timeout=30,
+        timeout=args.timeout,
     )
     resp.raise_for_status()
 
