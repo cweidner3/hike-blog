@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { apiCall } from '../util/fetch';
+import Spinner from '../components/Spinner';
 
 async function queryHikes() {
     const resp = apiCall('/hikes/', 'GET', { json: true });
@@ -52,10 +53,13 @@ function HikeItem(props = {}) {
 
 function HikesBrowser(props = {}) {
     const [hikes, setHikes] = useState([]);
+    const [loaded, setLoaded] = useState(false);
 
     useEffect(() => {
         queryHikes().then((resp) => {
             setHikes(resp.data)
+        }).finally(() => {
+            setLoaded(true);
         })
     }, [])
 
@@ -71,9 +75,11 @@ function HikesBrowser(props = {}) {
 
             <div className='block'></div>
 
-            <table className='table is-fullwidth is-hoverable'>
-                <tbody>{tbody}</tbody>
-            </table>
+            <Spinner loading={!loaded}>
+                <table className='table is-fullwidth is-hoverable'>
+                    <tbody>{tbody}</tbody>
+                </table>
+            </Spinner>
         </div>
     );
 }
