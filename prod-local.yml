@@ -3,6 +3,8 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile.prod
+      args:
+        APP_VERSION: local-prod
     environment:
       APP_MODE: production
       SCRIPT_NAME: /api
@@ -20,6 +22,8 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile.prod
+      args:
+        APP_VERSION: local-prod
     volumes: null
 
   db:

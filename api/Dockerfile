@@ -17,6 +17,11 @@ WORKDIR /app
 
 COPY ./src ./src
 
+# Update version file
+ARG APP_VERSION
+RUN mkdir -p meta
+RUN echo "{\"version\": \"$APP_VERSION\"}" > meta/version.json
+
 EXPOSE 5000
 
 ENTRYPOINT ["/entrypoint"]
