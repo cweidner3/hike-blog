@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Any, List, Tuple
+import itertools
+from typing import Any, Dict, List, Tuple
 
 import flask
 from flask_expects_json import expects_json
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from src.common import GLOBALS, strict_schema, to_datetime
 from src.db.core import engine
-from src.db.models import Hike, TrackData, TrackSegment, Waypoint, Track
+from src.db.models import Hike, Track, TrackData, TrackSegment, Waypoint
 from src.importers import gpx
 from src.middleware import auth_as_admin
 
@@ -147,14 +148,38 @@ def one_hike(hike_id: int):
             .where(Hike.id == hike_id)
         ).scalar_one()
         if flask.request.args.get('includeTrack', 'false') == 'true':
-            trackdata = hike.tracks
-            trackdata = map(lambda x: list(map(
-                lambda y: list(map(lambda z: z.serialized, y.points)),
-                x.segments
-            )), trackdata)
+            tracks = session.execute(
+                select(Track)
+                .where(Track.parent == hike_id)
+            ).scalars()
+            tracks = list(tracks)
+            track_ids = list(map(lambda x: x.id, tracks))
+
+            def _get_segments(track_id: int):
+                segments = session.execute(
+                    select(TrackSegment)
+                    .where(TrackSegment.parent == track_id)
+                ).scalars()
+                segments = map(lambda x: x.id, segments)
+                return list(segments)
+            seg_ids = map(_get_segments, track_ids)
+            seg_ids = itertools.chain.from_iterable(seg_ids)
+            seg_ids = list(seg_ids)
+
+            def _get_track_data(seg_id: int):
+                data = session.execute(
+                    select(TrackData)
+                    .where(TrackData.segment == seg_id)
+                ).scalars()
+                return list(map(lambda x: x.serialized, data))
+
+            trackdata = map(_get_track_data, seg_ids)
             trackdata = list(trackdata)
 
-            waypointdata = hike.waypoints
+            waypointdata = session.execute(
+                select(Waypoint)
+                .where(Waypoint.parent == hike_id)
+            ).scalars()
             waypointdata = map(lambda x: x.serialized, waypointdata)
             waypointdata = list(waypointdata)
 

@@ -136,7 +136,7 @@ def _action_create(args_):
     resp = requests.post(url, json=data, headers=headers, timeout=10)
     resp.raise_for_status()
 
-    print(' Hike: {json.dumps(resp.json(), indent=2)}')
+    print(f' Hike: {json.dumps(resp.json(), indent=2)}')
 
 
 def _action_update(args_):
