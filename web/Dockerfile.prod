@@ -10,6 +10,11 @@ RUN npm ci
 
 COPY ./public ./public
 COPY ./src ./src
+
+# Update version file
+ARG APP_VERSION
+RUN echo "{\"version\": \"$APP_VERSION\"}" > src/meta/version.json
+
 RUN npm run build
 
 ################################################################################

@@ -62,6 +62,8 @@ jobs:
           push: true
           tags: ${{ steps.metaweb.outputs.tags }}
           labels: ${{ steps.metaweb.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ fromJSON(steps.metaweb.outputs.json).labels['org.opencontainers.image.version'] }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v3.2.0
@@ -71,3 +73,5 @@ jobs:
           push: true
           tags: ${{ steps.metaapi.outputs.tags }}
           labels: ${{ steps.metaapi.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ fromJSON(steps.metaapi.outputs.json).labels['org.opencontainers.image.version'] }}

@@ -11,14 +11,20 @@ services:
         mode: 0644
 
   web:
-    build: ./web
+    build:
+      context: ./web
+      args:
+        APP_VERSION: local-dev
     ports:
       - 3000:3000/tcp
     volumes:
     - ./web/src:/app/src:ro
 
   api:
-    build: ./api
+    build:
+      context: ./api
+      args:
+        APP_VERSION: local-dev
     environment:
       APP_MODE: development
       DB_DIALECT: postgres
