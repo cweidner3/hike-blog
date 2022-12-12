@@ -115,7 +115,6 @@ class Picture(Base):
     name = Column(Text, nullable=False)
     fmt = Column(Text, nullable=False)
     time = Column(AwareDateTime, nullable=False)
-    data = Column(LargeBinary(1 << 24), nullable=False)
     description = Column(Text)
 
     @property
@@ -128,6 +127,30 @@ class Picture(Base):
             'fmt': self.fmt,
             'time': self.time,
             'description': self.description,
+        }
+        return ret
+
+
+class PictureData(Base):
+    __tablename__ = 'picturedata'
+
+    id = Column(Integer, primary_key=True)
+    parent = Column(Integer, ForeignKey(Picture.id, ondelete='CASCADE'), nullable=False)
+
+    size = Column(Integer, nullable=False)
+    resized = Column(String(32), nullable=False)
+    sha = Column(String(256), nullable=False)
+    data = Column(LargeBinary(1 << 24), nullable=False)
+
+    @property
+    def serialized(self) -> dict:
+        ''' Return dict for use when serializing. '''
+        ret = {
+            'id': self.id,
+            'parent': self.parent,
+            'size': self.size,
+            'resized': self.resized,
+            'sha': self.sha,
         }
         return ret
 
