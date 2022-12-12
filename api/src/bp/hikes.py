@@ -166,6 +166,19 @@ def one_hike(hike_id: int):
         return flask.jsonify(hike)
 
 
+@bp_hikes.get('/<int:hike_id>/waypoints')
+def get_hike_waypoints(hike_id: int):
+    ''' Get waypoints associated with the hike. '''
+    with Session(engine) as session:
+        wpts = session.execute(
+            select(Waypoint)
+            .where(Waypoint.parent == hike_id)
+            .order_by(Waypoint.time)
+        ).scalars()
+        wpts = list(map(lambda x: x.json, map(flask.jsonify, wpts)))
+        return {'data': wpts}
+
+
 ####################################################################################################
 # Restricted Routes
 

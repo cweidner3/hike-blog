@@ -3,7 +3,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from src.db.core import engine
-from src.db.models import Track, TrackData, TrackSegment
+from src.db.models import Hike, Track, TrackData, TrackSegment
 from src.middleware import auth_as_admin
 
 bp_tracks = flask.Blueprint('tracks', __name__, url_prefix='/tracks')
@@ -66,6 +66,36 @@ def list_track_points(track_id: int, segment_id: int):
             .order_by(TrackData.time)
         ).scalars().all()
         return points
+
+
+@bp_tracks.get('/hike/<int:hike_id>')
+def tracks_from_hike(hike_id: int):
+    ''' Manage a track instance. '''
+    with Session(engine) as session:
+        tracks = session.execute(
+            select(Track)
+            .where(Track.parent == hike_id)
+        ).scalars()
+
+        def _get_points(item):
+            points = item.points
+            points = map(lambda x: x.serialized, points)
+            return list(points)
+
+        def _get_segments(item):
+            segments = item.segments
+            segments = map(_get_points, segments)
+            segments = list(segments)
+            return segments
+
+        def _format_track(item):
+            obj = item.serialized
+            obj['segments'] = _get_segments(item)
+            return obj
+
+        tracks = map(_format_track, tracks)
+        tracks = list(tracks)
+        return {'data': tracks}
 
 
 ####################################################################################################

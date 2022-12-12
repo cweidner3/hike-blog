@@ -44,7 +44,7 @@ class Hike(Base):
             'description': self.description,
             'tracks': list(map(lambda x: x.id, self.tracks)),
             'waypoints': list(map(lambda x: x.id, self.waypoints)),
-            'pictures': list(map(lambda x: (x.id, f'{x.name}.{x.fmt}'), self.pictures)),
+            'pictures': list(map(lambda x: (x.id, x.name), self.pictures)),
         }
         return ret
 
