@@ -1,12 +1,8 @@
 import {useEffect, useRef, useState} from "react";
 import {useParams} from "react-router-dom";
-import {renderToString} from 'react-dom/server';
-import ReactDOM from 'react-dom';
+import ReactMarkdown from 'react-markdown';
 
-import mapboxgl, {
-  NavigationControl,
-  ScaleControl,
-} from 'mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+import mapboxgl from 'mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
@@ -31,7 +27,6 @@ const {
 mapboxgl.accessToken = MAPBOXGL_ACCESS_TOKEN;
 
 let gHikeTimezone = 'UTC';
-let gHikeId = null;
 
 async function queryHike(hikeId, { includeTrack=false } = {}) {
     const query = { includeTrack };
@@ -103,7 +98,7 @@ function PicturePopup(props = {}) {
     return (
         <div className="content">
             <p className="has-text-weight-bold">{time}</p>
-            <p>{description}</p>
+            <ReactMarkdown>{description}</ReactMarkdown>
             {img}
         </div>
     );
@@ -128,7 +123,7 @@ function WaypointPopup(props = {}) {
         <div className="content">
             <p className="has-text-weight-bold">{name}</p>
             <p>{JSON.stringify(visibleCoords).replace(',', ', ')}</p>
-            <p>{description}</p>
+            <ReactMarkdown>{description}</ReactMarkdown>
         </div>
     );
 }
@@ -534,7 +529,7 @@ function Hike(props = {}) {
 
             <div className="card has-background-grey-light">
                 <div className="card-content">
-                    <p>{hike?.description}</p>
+                    <ReactMarkdown>{hike?.description}</ReactMarkdown>
                 </div>
             </div>
 
