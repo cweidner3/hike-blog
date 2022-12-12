@@ -54,7 +54,10 @@ export const MAP_SOURCES = {
         data: {
             type: 'FeatureCollection',
             features: [],
-        }
+        },
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
     },
 };
 
@@ -110,13 +113,40 @@ export const MAP_LAYERS = [
         },
     },
     {
+        id: 'picture-clustered',
+        filter: ['has', 'point_count'],
+        type: 'circle',
+        source: 'picture',
+        layout: {},
+        paint: {
+            'circle-color': COLOR_MAP.circle ?? '#FFF',
+            'circle-radius': 15,
+            'circle-stroke-width': 1,
+        },
+    },
+    {
+        id: 'picture-clustered-labels',
+        filter: ['has', 'point_count'],
+        type: 'symbol',
+        source: 'picture',
+        layout: {
+            'text-field': ['get', 'point_count_abbreviated'],
+            'text-size': 12,
+        },
+        paint: {},
+    },
+    {
         id: 'picture',
+        filter: ['!', ['has', 'point_count']],
         type: 'symbol',
         source: 'picture',
         layout: {
             'icon-image': 'camera',
-            'icon-size': ICON_SIZES.camera,
+            'icon-size': ['get', 'iconSize'], //  ICON_SIZES.waypoint,
             'icon-anchor': 'bottom',
+            'icon-ignore-placement': true,
+            'text-allow-overlap': true,
+            'text-ignore-placement': true,
         },
         paint: {
             'icon-color': COLOR_MAP.camera ?? COLOR_MAP['default'],
