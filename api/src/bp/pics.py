@@ -154,6 +154,7 @@ def get_pics_for_hike(hike_id: int):
 @bp_pics_admin.post('/hike/<int:hike_id>')
 def upload_picture(hike_id: int):
     ''' Return list of tracks. '''
+    GLOBALS.logger.info('Picture upload for %d images', len(flask.request.files))
     with Session(engine) as session:
         if not flask.request.files:
             raise ValueError('Must provide files for uplaoding images')
@@ -163,6 +164,7 @@ def upload_picture(hike_id: int):
         ).scalar_one()
         created = []
         for filename, file in flask.request.files.items():
+            GLOBALS.logger.info('Picture uploading: %s...', filename)
             file_data = file.stream.read()
             fsize = len(file_data)
             fhash = hashlib.sha256(file_data).hexdigest()
@@ -250,6 +252,7 @@ def change_hike_timezone(hike_id: int):
 @bp_pics_admin.post('/process')
 def process_image_data():
     limit = int(flask.request.args.get('limit', default='5'))
+    GLOBALS.logger.info('Starting image processing endpoint for %s images', limit)
     with Session(engine) as session:
         ret = session.execute(
             select(Picture.id, Picture.name)
