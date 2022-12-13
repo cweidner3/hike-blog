@@ -3,7 +3,8 @@ FROM python:3.11
 RUN apt update -y && apt install -y \
     gcc openssl \
     mariadb-common libmariadb3 libmariadb-dev \
-    libpq5 libpq-dev postgresql-common
+    libpq5 libpq-dev postgresql-common \
+    imagemagick
 
 RUN python -m venv /venv
 
@@ -15,6 +16,11 @@ COPY ./entrypoint.sh /entrypoint
 WORKDIR /app
 
 COPY ./src ./src
+
+# Update version file
+ARG APP_VERSION
+RUN mkdir -p meta
+RUN echo "{\"version\": \"$APP_VERSION\"}" > meta/version.json
 
 EXPOSE 5000
 

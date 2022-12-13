@@ -14,6 +14,7 @@ help:
 	@echo "  upgrade   [REV=]   Migrate database upwards to REV [default head]"
 	@echo "  downgrade [REV=]   Migrate database downwards to REV."
 	@echo "  testhike           Upload test data for viewing the hike page."
+	@echo "  picprocess         Run the routine to process pics for web display."
 	@echo "  cov                Show report of test coverage of the app."
 	@echo "  html               Show report of test coverage of the app in html."
 
@@ -32,6 +33,10 @@ downgrade:
 .PHONY: testhike
 testhike:
 	python -m tests.scripts.upload_test_hike $(REPLACE)
+
+.PHONY: picprocess
+picprocess:
+	python -m tests.scripts.process_pics
 
 .PHONY: cov
 cov: .coverage

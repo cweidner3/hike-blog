@@ -1,3 +1,4 @@
+import itertools
 import flask
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
@@ -77,21 +78,28 @@ def tracks_from_hike(hike_id: int):
             .where(Track.parent == hike_id)
         ).scalars()
 
-        def _get_points(item):
-            points = item.points
-            points = map(lambda x: x.serialized, points)
+        def _get_points(seg_id: int):
+            ret = session.execute(
+                select(TrackData)
+                .where(TrackData.segment == seg_id)
+            ).scalars()
+            points = map(lambda x: x.serialized, ret)
             return list(points)
 
-        def _get_segments(item):
-            segments = item.segments
-            segments = map(_get_points, segments)
+        def _get_segments(track_id: int):
+            ret = session.execute(
+                select(TrackSegment)
+                .where(TrackSegment.parent == track_id)
+            ).scalars()
+            ret = map(lambda x: x.id, ret)
+            segments = map(_get_points, ret)
             segments = list(segments)
             return segments
 
-        def _format_track(item):
-            obj = item.serialized
-            obj['segments'] = _get_segments(item)
-            return obj
+        def _format_track(track):
+            ret = track.serialized
+            ret['segments'] = _get_segments(track.id)
+            return ret
 
         tracks = map(_format_track, tracks)
         tracks = list(tracks)

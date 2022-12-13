@@ -26,10 +26,6 @@ class Hike(Base):
     brief = Column(Text)
     description = Column(Text)
 
-    tracks = relationship('Track', cascade='all, delete', passive_deletes=True)
-    waypoints = relationship('Waypoint', cascade='all, delete', passive_deletes=True)
-    pictures = relationship('Picture', cascade='all, delete', passive_deletes=True)
-
     @property
     def serialized(self) -> dict:
         ''' Return dict for use when serializing. '''
@@ -42,9 +38,6 @@ class Hike(Base):
             'title': self.title,
             'brief': self.brief,
             'description': self.description,
-            'tracks': list(map(lambda x: x.id, self.tracks)),
-            'waypoints': list(map(lambda x: x.id, self.waypoints)),
-            'pictures': list(map(lambda x: (x.id, x.name), self.pictures)),
         }
         return ret
 
@@ -58,8 +51,6 @@ class Track(Base):
     name = Column(Text)
     description = Column(Text)
 
-    segments = relationship('TrackSegment', cascade='all, delete', passive_deletes=True)
-
     @property
     def serialized(self) -> dict:
         ''' Return dict for use when serializing. '''
@@ -68,7 +59,6 @@ class Track(Base):
             'parent': self.parent,
             'name': self.name,
             'description': self.description,
-            'segments': list(map(lambda x: x.id, self.segments)),
         }
         return ret
 
@@ -79,15 +69,12 @@ class TrackSegment(Base):
     id = Column(Integer, primary_key=True)
     parent = Column(Integer, ForeignKey(Track.id, ondelete='CASCADE'), nullable=False)
 
-    points = relationship('TrackData', cascade='all, delete', passive_deletes=True)
-
     @property
     def serialized(self) -> dict:
         ''' Return dict for use when serializing. '''
         ret = {
             'id': self.id,
             'parent': self.parent,
-            'points': list(map(lambda x: x.id, self.points)),
         }
         return ret
 
@@ -128,7 +115,6 @@ class Picture(Base):
     name = Column(Text, nullable=False)
     fmt = Column(Text, nullable=False)
     time = Column(AwareDateTime, nullable=False)
-    data = Column(LargeBinary(1 << 24), nullable=False)
     description = Column(Text)
 
     @property
@@ -141,6 +127,30 @@ class Picture(Base):
             'fmt': self.fmt,
             'time': self.time,
             'description': self.description,
+        }
+        return ret
+
+
+class PictureData(Base):
+    __tablename__ = 'picturedata'
+
+    id = Column(Integer, primary_key=True)
+    parent = Column(Integer, ForeignKey(Picture.id, ondelete='CASCADE'), nullable=False)
+
+    size = Column(Integer, nullable=False)
+    resized = Column(String(32), nullable=False)
+    sha = Column(String(256), nullable=False)
+    data = Column(LargeBinary(1 << 24), nullable=False)
+
+    @property
+    def serialized(self) -> dict:
+        ''' Return dict for use when serializing. '''
+        ret = {
+            'id': self.id,
+            'parent': self.parent,
+            'size': self.size,
+            'resized': self.resized,
+            'sha': self.sha,
         }
         return ret
 

@@ -16,6 +16,7 @@ import pytz
 import requests
 
 from common.config import CONFIG, ROOT, get_logger
+from common.progress import Progress, FilesProgress
 
 LOG = get_logger()
 
@@ -136,7 +137,7 @@ def _action_create(args_):
     resp = requests.post(url, json=data, headers=headers, timeout=10)
     resp.raise_for_status()
 
-    print(' Hike: {json.dumps(resp.json(), indent=2)}')
+    print(f' Hike: {json.dumps(resp.json(), indent=2)}')
 
 
 def _action_update(args_):
@@ -198,20 +199,53 @@ def _action_upload(args_):
     api_key = CONFIG.get('api-key', section='app')
     headers = {'Api-Session': api_key}
 
+    prog = FilesProgress(args.files)
+
+    class MyBuf(io.FileIO):
+        ''' Subclassing to grab chunk sizes '''
+
+        def read(self, __size: int = -1) -> bytes:
+            chunk = super().read(__size)
+            prog.handle(len(chunk))
+            return chunk
+
     for file in args.files:
         if file.suffix.lower() in pic_files:
             url = f'{base_url}/api/pictures/hike/{args.hikeid}'
         else:
             url = f'{base_url}/api/hikes/{args.hikeid}/data'
-        with open(file, 'rb') as inf:
-            files = {file.name: inf}
-            resp = requests.post(
-                url,
-                files=files,
-                headers=headers,
-                timeout=30,
-            )
-            resp.raise_for_status()
+        inf = MyBuf(file)
+        files = {file.name: inf}
+        resp = requests.post(
+            url,
+            files=files,
+            headers=headers,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        prog.next_file()
+
+
+def _action_process(args_):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--limit', type=int, default=5)
+    parser.add_argument('--timeout', type=int, default=30)
+    args = parser.parse_args(args_.others)
+
+    base_url = CONFIG.get('url', section='app')
+    api_key = CONFIG.get('api-key', section='app')
+    headers = {'Api-Session': api_key}
+
+    url = f'{base_url}/api/pictures/process?limit={args.limit}'
+
+    resp = requests.post(
+        url,
+        headers=headers,
+        timeout=args.timeout,
+    )
+    resp.raise_for_status()
+
+    print(json.dumps(resp.json(), indent=2))
 
 
 ####################################################################################################
@@ -223,6 +257,7 @@ def _main():
         'create': _action_create,
         'update': _action_update,
         'upload': _action_upload,
+        'process': _action_process,
     }
 
     parser = argparse.ArgumentParser()

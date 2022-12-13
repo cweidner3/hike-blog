@@ -16,6 +16,10 @@ RUN npm install react-scripts@3.4.1 -g --silent
 COPY public ./public
 COPY src ./src
 
+# Update version file
+ARG APP_VERSION
+RUN echo "{\"version\": \"$APP_VERSION\"}" > src/meta/version.json
+
 EXPOSE 3000
 
 COPY ./entrypoint.sh /entrypoint.sh
