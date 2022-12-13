@@ -11,6 +11,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import { apiCall } from "../util/fetch";
+import Spinner from "../components/Spinner";
+
 import {
     ATLANTA_COORDS,
     ICONS,
@@ -19,6 +21,7 @@ import {
     TRACK_COLORS,
     ICON_SIZES,
 } from './map-config';
+
 
 const {
   MAPBOXGL_ACCESS_TOKEN = 'pk.eyJ1IjoiY3dlaWRuZXIzIiwiYSI6ImNsM29wbDU0dTBxdjkzY3V2ajk2Y2I3MXcifQ.KYe1u_UcNKFneq-d0bCU0g',
@@ -373,6 +376,13 @@ function MapContainer(props = {}) {
             setLoaded2(true);
             setLoaded(true);
         });
+        window.addEventListener('resize', (e) => {
+            const mapcont = document.getElementsByClassName('Map').item(0).parentElement;
+            if (mapcont == null) {
+                return;
+            }
+            mapRef.current.resize(e)
+        })
     }, []);
 
     useEffect(() => {
@@ -446,7 +456,9 @@ function MapContainer(props = {}) {
     }, [selected[1]]);
 
     return (
-        <div>
+        <div className="container">
+            <Spinner loading={tracks.length === 0}></Spinner>
+
             <div ref={mapContRef} className="Map" style={mapStyle} />
 
             <div className="sidebar">
@@ -477,6 +489,7 @@ function Hike(props = {}) {
     const [waypoints, setWaypoints] = useState([]);
     const [pictures, setPictures] = useState([]);
     const [timeString, setTimeString] = useState('');
+    const [hikeMetaLoaded, setHikeMetaLoaded] = useState(false);
 
     console.debug('Props', props.router);
 
@@ -491,7 +504,9 @@ function Hike(props = {}) {
             if (!!ret.zone) {
                 gHikeTimezone = ret.zone;
             }
-        }).catch((err) => console.error('Failed to get hike info:', err));
+        }).catch((err) => console.error('Failed to get hike info:', err)).finally(() => {
+            setHikeMetaLoaded(true);
+        });
         queryTracks(params.hikeId).then((ret) => {
             setTracks(ret.data);
         }).catch((err) => console.error('Failed to get hike track info:', err));
@@ -527,28 +542,29 @@ function Hike(props = {}) {
 
             <div className="block"></div>
 
-            <div className="card has-background-grey-light">
-                <div className="card-content">
-                    <ReactMarkdown>{hike?.description}</ReactMarkdown>
+            <Spinner loading={!hikeMetaLoaded}>
+                <div className="card has-background-grey-light">
+                    <div className="card-content">
+                        <ReactMarkdown>{hike?.description}</ReactMarkdown>
+                    </div>
                 </div>
-            </div>
+
+            </Spinner>
 
             <div className="block"></div>
 
-            <div>
-                <MapContainer
-                    hike={hike}
-                    tracks={tracks}
-                    waypoints={waypoints}
-                    pictures={pictures}
-                    startingCoords={(
-                        ['longitude', 'latitude'].every((x) => !!hike && !!hike[x])
-                        ? [hike?.longitude, hike?.latitude]
-                        : undefined
-                    )}
-                    startingZoom={hike?.zoom}
-                />
-            </div>
+            <MapContainer
+                hike={hike}
+                tracks={tracks}
+                waypoints={waypoints}
+                pictures={pictures}
+                startingCoords={(
+                    ['longitude', 'latitude'].every((x) => !!hike && !!hike[x])
+                    ? [hike?.longitude, hike?.latitude]
+                    : undefined
+                )}
+                startingZoom={hike?.zoom}
+            />
         </div>
     )
 }
