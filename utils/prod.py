@@ -16,6 +16,7 @@ import pytz
 import requests
 
 from common.config import CONFIG, ROOT, get_logger
+from common.progress import Progress, FilesProgress
 
 LOG = get_logger()
 
@@ -198,20 +199,31 @@ def _action_upload(args_):
     api_key = CONFIG.get('api-key', section='app')
     headers = {'Api-Session': api_key}
 
+    prog = FilesProgress(args.files)
+
+    class MyBuf(io.FileIO):
+        ''' Subclassing to grab chunk sizes '''
+
+        def read(self, __size: int = -1) -> bytes:
+            chunk = super().read(__size)
+            prog.handle(len(chunk))
+            return chunk
+
     for file in args.files:
         if file.suffix.lower() in pic_files:
             url = f'{base_url}/api/pictures/hike/{args.hikeid}'
         else:
             url = f'{base_url}/api/hikes/{args.hikeid}/data'
-        with open(file, 'rb') as inf:
-            files = {file.name: inf}
-            resp = requests.post(
-                url,
-                files=files,
-                headers=headers,
-                timeout=30,
-            )
-            resp.raise_for_status()
+        inf = MyBuf(file)
+        files = {file.name: inf}
+        resp = requests.post(
+            url,
+            files=files,
+            headers=headers,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        prog.next_file()
 
 
 def _action_process(args_):
